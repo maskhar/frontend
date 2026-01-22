@@ -6,7 +6,7 @@ module.exports = {
       args: 'run dev',                 // Menjalankan perintah 'run dev'
       env: {
         NODE_ENV: 'development',
-        PORT: 8080                     // Sesuaikan port jika perlu
+        PORT: 8082                     // Sesuaikan port jika perlu
       },
       watch: false,                     // Restart otomatis jika ada perubahan file (cocok untuk dev)
       ignore_watch: [                  // Folder yang diabaikan saat perubahan file
