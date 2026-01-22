@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'soundpub-frontend',      // Nama aplikasi di PM2
+      name: 'soundpub-frontend-dev',      // Nama aplikasi di PM2
       script: 'npm',
       args: 'run dev',                 // Menjalankan perintah 'run dev'
       env: {
