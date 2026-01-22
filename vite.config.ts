@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: [
       ".localhost",
       "soundpub.xyz",
+      "dev.soundpub.xyz",
     ]
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
