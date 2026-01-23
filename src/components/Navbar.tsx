@@ -111,10 +111,10 @@ const Navbar = () => {
 
           {/* CTA */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" className="hidden sm:inline-flex">
+            <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => alert('Under Development!')}>
               Masuk
             </Button>
-            <Button variant="hero" size="default" className="hidden sm:inline-flex">
+            <Button variant="hero" size="default" className="hidden sm:inline-flex" onClick={() => alert('Under Development!')}>
               Daftar
             </Button>
             
@@ -154,10 +154,10 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="flex gap-2 mt-4 px-4">
-                <Button variant="outline" className="flex-1">
+                <Button variant="outline" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                   Masuk
                 </Button>
-                <Button variant="hero" className="flex-1">
+                <Button variant="hero" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                   Daftar
                 </Button>
               </div>
