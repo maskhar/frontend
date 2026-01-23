@@ -1,7 +1,5 @@
 # Proyek Soundpub - TODO List
 
-Dokumen ini melacak kemajuan pengembangan dan rencana masa depan untuk proyek Soundpub.
-
 ## ✅ Selesai (V1)
 
 ### Fondasi & Infrastruktur
