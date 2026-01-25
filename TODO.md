@@ -31,20 +31,27 @@
 ### Peningkatan Dashboard
 - [ ] **Manajemen Urutan Kategori:** Implementasikan fungsionalitas drag-and-drop untuk mengurutkan kategori itu sendiri.
 - [ ] **Fitur "Populer":** Tambahkan checkbox "Jadikan Populer" di form edit paket untuk menyorot paket tertentu di halaman publik.
-- [ ] **Manajemen Pengguna (User Roles):**
+- [x] **Manajemen Pengguna (User Roles):**
   - [ ] Buat halaman untuk mengelola pengguna admin.
   - [ ] Kembangkan sistem peran (misal: Super Admin vs. Editor Konten) untuk membatasi akses.
 - [ ] **Analitik Sederhana:** Tampilkan grafik atau data sederhana di halaman utama dashboard (misalnya: jumlah paket, jumlah kategori).
-- [ ] **Manajemen Halaman Lain:** Buat modul serupa (CRUD) untuk mengelola konten halaman lain (misal: Blog, Services).
-- [ ] **Penyimpanan Gambar:** Integrasikan Supabase Storage untuk mengunggah gambar atau thumbnail untuk setiap paket layanan.
+- [x] **Manajemen Halaman Lain:** Buat modul serupa (CRUD) untuk mengelola konten halaman lain (misal: Blog, Services).
+  - [x] Manajemen Service Grid (dengan unggah gambar)
+  - [x] Perbaikan bug pengurutan ulang layanan utama dan langkah "Cara Kerja" di halaman manajemen layanan.
+- [x] **Penyimpanan Gambar:** Integrasikan Supabase Storage untuk mengunggah gambar/thumbnail untuk `service_items` (Service Grid).
 
 ### Peningkatan Frontend
+- [ ] **Implementasi Desain UI Halaman Kolaborasi:** Terapkan desain visual baru untuk halaman `/kolaborasi` sesuai mockup (`kolaborasi-update.png`).
+- [ ] **Formulir Kontak/Kolaborasi:** Buat formulir di halaman `/kolaborasi` yang datanya akan disimpan ke tabel Supabase.
+- [x] **Pembaruan Desain Halaman Layanan:** Tingkatkan desain halaman `/contract` (Services) agar sesuai dengan mockup (`services-template.png`), termasuk bagian grid layanan, booking session, Music Studio, dan Music Class.
+  - [x] Manajemen bagian grid layanan (Service Grid) sudah diimplementasikan.
+  - [x] Fungsionalitas pengurutan ulang (drag-and-drop) untuk layanan utama dan langkah "Cara Kerja" berfungsi dengan benar.
 - [ ] **Terapkan Fitur "Populer":** Desain ulang `PricingCard` untuk memberikan gaya visual yang berbeda jika sebuah paket ditandai sebagai "populer".
+- [x] **Validasi Input (Form)::** Implementasikan validasi form yang lebih kuat menggunakan library seperti `Zod` dan `react-hook-form`.
 - [ ] **Halaman Blog Dinamis:** Buat halaman `/blog` sepenuhnya dinamis, dikelola dari dashboard.
 - [ ] **Optimasi Performa:**
   - [ ] Implementasikan *caching* data dengan React Query (`@tanstack/react-query`) untuk mengurangi panggilan database yang berulang.
   - [ ] Optimasi gambar untuk mempercepat waktu muat halaman.
-- [ ] **Formulir Kontak/Kolaborasi:** Buat formulir di halaman `/kolaborasi` yang datanya akan disimpan ke tabel Supabase.
 - [ ] **Pencarian:** Tambahkan fungsionalitas pencarian untuk katalog atau blog.
 
 ### Peningkatan Teknis & Keamanan
