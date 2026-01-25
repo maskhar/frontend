@@ -1,12 +1,12 @@
 module.exports = {
   apps: [
     {
-      name: 'soundpub-frontend',      // Nama aplikasi di PM2
+      name: 'frontend-main',      // Nama aplikasi di PM2
       script: 'npm',
       args: 'run dev',                 // Menjalankan perintah 'run dev'
       env: {
         NODE_ENV: 'development',
-        PORT: 8082                     // Sesuaikan port jika perlu
+        PORT: 8081                     // Sesuaikan port jika perlu
       },
       watch: false,                     // Restart otomatis jika ada perubahan file (cocok untuk dev)
       ignore_watch: [                  // Folder yang diabaikan saat perubahan file

@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8082,
+    port: 8081,
     allowedHosts: [
       ".localhost",
       "soundpub.xyz",
