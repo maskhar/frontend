@@ -1,7 +1,11 @@
 module.exports = {
   apps: [
     {
+<<<<<<< HEAD
       name: 'frontend-main',      // Nama aplikasi di PM2
+=======
+      name: 'front-main',      // Nama aplikasi di PM2
+>>>>>>> d5187ab8cf956898d868d7f7b3bee219dde725e7
       script: 'npm',
       args: 'run dev',                 // Menjalankan perintah 'run dev'
       env: {
