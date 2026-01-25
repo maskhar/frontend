@@ -2,16 +2,14 @@ import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, LayoutGrid, FileText, ChevronDown } from 'lucide-react';
+import { Menu, LayoutGrid, FileSignature, Blocks } from 'lucide-react'; // Updated imports
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast, Toaster } from 'sonner';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+// Collapsible is no longer needed for this section
 
 // Reusable navigation content for both sidebar and mobile sheet
 const DashboardNavContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
-  const [isEditPageOpen, setIsEditPageOpen] = useState(false);
-
   return (
     <nav className="flex-grow px-4 py-4">
       <ul>
@@ -31,37 +29,40 @@ const DashboardNavContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
             <span>Dashboard</span>
           </NavLink>
         </li>
-        <li className="mt-2">
-          <Collapsible open={isEditPageOpen} onOpenChange={setIsEditPageOpen}>
-            <CollapsibleTrigger
-              className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                isEditPageOpen && 'bg-primary/10 text-primary'
-              )}
-            >
-              <FileText className="h-4 w-4" />
-              <span>Edit Page</span>
-              <ChevronDown className={cn('ml-auto h-4 w-4 transition-transform', isEditPageOpen && 'rotate-180')} />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up overflow-hidden transition-all duration-300 ease-in-out">
-              <ul className="ml-6 mt-1 space-y-1">
-                <li>
-                  <NavLink
-                    to="/dashboard/contract"
-                    onClick={onLinkClick}
-                    className={({ isActive }) =>
-                      cn(
+
+        {/* Manajemen Konten Section */}
+        <li className="mt-4 mb-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Manajemen Konten
+        </li>
+        <li>
+            <NavLink
+                to="/dashboard/contract"
+                onClick={onLinkClick}
+                className={({ isActive }) =>
+                    cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
                         isActive && 'bg-primary/10 text-primary'
-                      )
-                    }
-                  >
-                    <span>Contract</span>
-                  </NavLink>
-                </li>
-              </ul>
-            </CollapsibleContent>
-          </Collapsible>
+                    )
+                }
+            >
+                <FileSignature className="h-4 w-4" />
+                <span>Contract</span>
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                to="/dashboard/services"
+                onClick={onLinkClick}
+                className={({ isActive }) =>
+                    cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                        isActive && 'bg-primary/10 text-primary'
+                    )
+                }
+            >
+                <Blocks className="h-4 w-4" />
+                <span>Services</span>
+            </NavLink>
         </li>
       </ul>
     </nav>

@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/Login";
 import DashboardPage from "./pages/Dashboard";
 import DashboardContractPage from "./pages/DashboardContractPage";
+import DashboardServicesPage from "./pages/DashboardServicesPage";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ const App = () => {
           <Route element={<ProtectedRoute session={session} loading={loading} />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/dashboard/contract" element={<DashboardContractPage />} />
+            <Route path="/dashboard/services" element={<DashboardServicesPage />} />
           </Route>
 
           {/* --- Catch-all Route --- */}
