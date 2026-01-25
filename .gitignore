@@ -24,14 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Folder for build outputs
-build/
-
-# Folder temporary files
-temp/*
-supabase/.temp/
-
-
 # Dependency directories
 node_modules/
 jspm_packages/
