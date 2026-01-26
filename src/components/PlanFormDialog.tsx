@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Category } from './CategoryManager';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Switch } from '@/components/ui/switch';
 
 export type Plan = {
   id?: string;
@@ -20,7 +21,9 @@ export type Plan = {
   period: string | null;
   description: string | null;
   features: string[] | null | string; // Allow string for editing state
+  popular: boolean;
   display_order?: number;
+  status?: 'active' | 'inactive'; // Tambahkan kolom status
 };
 
 const EMPTY_PLAN: Plan = {
@@ -30,6 +33,8 @@ const EMPTY_PLAN: Plan = {
   period: '',
   description: '',
   features: '',
+  popular: false,
+  status: 'active', // Default ke aktif
 };
 
 const PlanFormDialog = ({
@@ -38,12 +43,14 @@ const PlanFormDialog = ({
   onSave,
   plan,
   categories,
+  onDuplicate,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSave: (plan: Plan) => void;
   plan: Plan | null;
   categories: Category[];
+  onDuplicate?: (plan: Plan) => void; // Tambahkan prop onDuplicate
 }) => {
   const [formData, setFormData] = useState<Plan>(EMPTY_PLAN);
 
@@ -51,7 +58,7 @@ const PlanFormDialog = ({
     if (plan) {
       setFormData(plan);
     } else {
-      // If creating a new plan, default to the first category if available
+      // Jika membuat paket baru, default ke kategori pertama dan status aktif
       const defaultData = { ...EMPTY_PLAN, category_id: categories[0]?.id || '' };
       setFormData(defaultData);
     }
@@ -64,6 +71,12 @@ const PlanFormDialog = ({
 
   const handleSaveClick = () => {
     onSave(formData);
+  };
+
+  const handleDuplicateClick = () => {
+    if (onDuplicate && plan) {
+      onDuplicate(plan);
+    }
   };
   
   if (!isOpen) return null;
@@ -124,8 +137,30 @@ const PlanFormDialog = ({
               placeholder="Satu fitur per baris..."
             />
           </div>
+          {plan?.id && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">Status Aktif</Label>
+              <div className="col-span-3 flex items-center gap-2">
+                <Switch
+                  id="status"
+                  checked={formData.status === 'active'}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, status: checked ? 'active' : 'inactive' }))}
+                />
+                <span>{formData.status === 'active' ? 'Aktif' : 'Nonaktif'}</span>
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter>
+          {plan?.id && onDuplicate && (
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={handleDuplicateClick}
+            >
+              Duplikat
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
           <Button type="submit" onClick={handleSaveClick}>Simpan</Button>
         </DialogFooter>

@@ -95,14 +95,25 @@ const Contract = () => {
     const fetchData = async () => {
       setLoading(true);
       
-      const { data: categoriesData, error: catError } = await supabase.from('categories').select('*').order('display_order');
-      const { data: plansData, error: planError } = await supabase.from('plans').select('*').order('display_order');
+      const { data: categoriesData, error: catError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('status', 'active') // <-- HANYA AMBIL YANG AKTIF
+        .order('display_order');
+        
+      const { data: plansData, error: planError } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('status', 'active') // <-- HANYA AMBIL YANG AKTIF
+        .order('display_order');
 
       if (catError || planError) {
         console.error("Error fetching data:", catError || planError);
         setError("Gagal memuat data. Silakan coba lagi nanti.");
       } else {
-        setCategories(categoriesData as Category[]);
+        // Saring kategori "Uncategorized" dari tampilan publik
+        const filteredCategories = categoriesData.filter(cat => cat.name.toLowerCase() !== 'uncategorized');
+        setCategories(filteredCategories as Category[]);
         setPlans(plansData as Plan[]);
       }
       setLoading(false);

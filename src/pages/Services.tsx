@@ -8,6 +8,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import type { ServiceItem } from "@/components/ServiceItemManager"; // Import tipe ServiceItem
+import { ServiceItemDetailDialog } from "@/components/ServiceItemDetailDialog"; // Import dialog baru
+
 // --- Type Definitions ---
 interface MainService {
   id: string;
@@ -21,15 +24,6 @@ interface HowItWorksStep {
   step_number: string;
   title: string;
   description: string;
-}
-
-// Type for the new service items (from service_items table)
-interface ServiceItem {
-  id: string;
-  title: string;
-  price_text: string;
-  image_url: string;
-  type: 'visual_grid' | 'extra_service';
 }
 
 // --- Icon Mapping ---
@@ -46,16 +40,15 @@ const iconMap: { [key: string]: React.ElementType } = {
 };
 
 // New Component for the visual service grid (moved from Contract.tsx)
-const ServiceGrid = ({ items }: { items: ServiceItem[] }) => (
-  <section className="my-20">
+const ServiceGrid = ({ items, onItemSelected }: { items: ServiceItem[], onItemSelected: (item: ServiceItem) => void }) => (
+  <section className="my-40 bg-background/50 py-16 px-6 rounded-3xl border border-border/50 shadow-lg">
 
-    {/* Service Grid Header */}
-    <h2 className="text-3xl md:text-4xl font-bold font-display text-center mb-12">
-      Kami Memberikan <span className="text-gradient">Service</span> Terbaik
+    <h2 className="text-3xl md:text-4xl font-bold font-display text-center mb-5">
+      Kami Memberikan <span className="text-gradient">Service</span>Terbaik
     </h2>
-    
-    <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
-      Pilih dari berbagai layanan kami yang dirancang untuk memenuhi kebutuhan distribusi musik digital Anda.
+
+    <p className="text-center text-muted-foreground max-w-2xxl mx-auto mb-20">
+      Reputasi kami terbentuk dari kolaborasi dengan para artis serta rekaman-rekaman berkualitas yang dihasilkan di studio kami.
     </p>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -66,7 +59,8 @@ const ServiceGrid = ({ items }: { items: ServiceItem[] }) => (
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="relative rounded-2xl overflow-hidden group aspect-w-1 aspect-h-1"
+          className="relative rounded-2xl overflow-hidden group aspect-w-1 aspect-h-1 cursor-pointer"
+          onClick={() => onItemSelected(item)} // Tambahkan handler klik
         >
           <img src={item.image_url} alt={item.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
@@ -84,9 +78,19 @@ const Services = () => {
   // --- State Management ---
   const [mainServices, setMainServices] = useState<MainService[]>([]);
   const [howItWorksSteps, setHowItWorksSteps] = useState<HowItWorksStep[]>([]);
-  const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]); // New state for ServiceGrid
+  const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // State untuk dialog detail service item
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedDetailItem, setSelectedDetailItem] = useState<ServiceItem | null>(null);
+
+  // Handler saat item Service Grid diklik
+  const handleServiceItemSelected = (item: ServiceItem) => {
+    setSelectedDetailItem(item);
+    setIsDetailDialogOpen(true);
+  };
 
   // --- Data Fetching ---
   useEffect(() => {
@@ -95,7 +99,7 @@ const Services = () => {
       const [servicesRes, stepsRes, serviceItemsRes] = await Promise.all([
         supabase.from('main_services').select('*').order('display_order'),
         supabase.from('how_it_works_steps').select('*').order('display_order'),
-        supabase.from('service_items').select('*').order('display_order') // Fetch service_items
+        supabase.from('service_items').select('*').order('display_order')
       ]);
 
       if (servicesRes.error || stepsRes.error || serviceItemsRes.error) {
@@ -104,7 +108,7 @@ const Services = () => {
       } else {
         setMainServices(servicesRes.data || []);
         setHowItWorksSteps(stepsRes.data || []);
-        setServiceItems(serviceItemsRes.data || []); // Set service_items state
+        setServiceItems(serviceItemsRes.data || []);
       }
       setLoading(false);
     };
@@ -130,7 +134,6 @@ const Services = () => {
             <h1 className="text-4xl md:text-5xl font-bold font-display mb-4">
               <span className="text-gradient">Layanan</span> Kami
             </h1>
-            
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Solusi lengkap untuk distribusi dan pengelolaan musik digital Anda.
             </p>
@@ -224,16 +227,24 @@ const Services = () => {
           </motion.div>
 
           {/* --- Visual Service Grid (from services-template.png) --- */}
-          {!loading && visualGridItems.length > 0 && <ServiceGrid items={visualGridItems} />}
+          {!loading && visualGridItems.length > 0 && <ServiceGrid items={visualGridItems} onItemSelected={handleServiceItemSelected} />}
 
         </div>
       </main>
 
       <Footer />
+
+      {/* Dialog Detail Service Item */}
+      <ServiceItemDetailDialog 
+        isOpen={isDetailDialogOpen}
+        setIsOpen={setIsDetailDialogOpen}
+        item={selectedDetailItem}
+      />
     </div>
   );
 };
 
 export default Services;
+
 
 

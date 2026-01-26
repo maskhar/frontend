@@ -6,9 +6,32 @@ import { User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 import CategoryManager, { type Category } from '@/components/CategoryManager';
-import PlanManager from '@/components/PlanManager';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 import PlanFormDialog, { type Plan } from '@/components/PlanFormDialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 
 const DashboardContractPage = () => {
@@ -59,29 +82,42 @@ const DashboardContractPage = () => {
     setIsFormOpen(true);
   };
 
+  const handleDuplicatePlan = async (planToDuplicate: Plan) => {
+    if (!planToDuplicate?.id) return;
+
+    const newPlanData: Partial<Plan> = {
+      ...planToDuplicate,
+      id: undefined, // Penting: Hapus ID agar menjadi entri baru
+      name: `${planToDuplicate.name} (Copy)`,
+      display_order: plans.length + 1, // Letakkan di akhir untuk saat ini
+      // Status akan default ke 'active' jika tidak didefinisikan di sini
+    };
+
+    // Panggil onSavePlan yang akan menangani insert karena tidak ada ID
+    await onSavePlan(newPlanData as Plan);
+    toast.success(`Paket "${newPlanData.name}" berhasil diduplikasi.`);
+  };
+
   const handleDeletePlan = (plan: Plan) => {
     setPlanToDelete(plan);
     setIsAlertOpen(true);
   };
 
   const onSavePlan = async (plan: Plan) => {
-    // Destructuring untuk mendapatkan 'id' dan sisa data plan
     const { id, ...planData } = plan;
 
-    // Ambil properti 'categories' yang merupakan hasil join dari sisa data.
-    // 'planDataForUpdate' sekarang adalah objek bersih yang hanya berisi kolom asli dari tabel 'plans'.
-    const { categories, ...planDataForUpdate } = planData as any;
+    // LANGKAH PENGAMAN: Hapus properti 'categories' secara eksplisit sebelum menyimpan.
+    // Ini adalah benteng pertahanan terakhir untuk mencegah error.
+    delete (planData as any).categories;
 
     // Pastikan fitur dalam format array yang benar sebelum disimpan
-    const featuresToSave = typeof planDataForUpdate.features === 'string'
-      ? planDataForUpdate.features.split('\n').filter(f => f.trim() !== '')
-      : planDataForUpdate.features;
+    const featuresToSave = typeof planData.features === 'string'
+      ? planData.features.split('\n').filter(f => f.trim() !== '')
+      : planData.features;
 
-    // Tentukan query: UPDATE jika ada ID, INSERT jika tidak ada
     const query = id
-      ? supabase.from('plans').update({ ...planDataForUpdate, features: featuresToSave }).eq('id', id)
-      // Pastikan display_order default diatur untuk item baru jika diperlukan
-      : supabase.from('plans').insert({ ...planDataForUpdate, features: featuresToSave, display_order: plans.length + 1 });
+      ? supabase.from('plans').update({ ...planData, features: featuresToSave }).eq('id', id)
+      : supabase.from('plans').insert({ ...planData, features: featuresToSave });
 
     const { error } = await query;
     if (error) {
@@ -89,7 +125,7 @@ const DashboardContractPage = () => {
     } else {
       toast.success(`Paket "${planData.name}" berhasil disimpan.`);
       setIsFormOpen(false);
-      fetchData(); // Muat ulang semua data untuk sinkronisasi
+      fetchData(); // Muat ulang semua data
     }
   };
   
@@ -118,19 +154,85 @@ const DashboardContractPage = () => {
 
       <CategoryManager onCategoriesUpdate={fetchData} />
       
-      <PlanManager 
-        categories={categories}
-        plans={plans as any[]}
-        loading={loading}
-        onPlanUpdate={fetchData}
-        onEditPlan={handleEditPlan}
-        onDeletePlan={handleDeletePlan}
-      />
+      {/* Container untuk layout kolom-kolom Kanban */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+        {categories.map((category) => (
+          <div key={category.id} className="flex flex-col gap-4">
+            {/* Header Kolom */}
+            <div className="bg-muted/50 rounded-lg p-3">
+              <h3 className="font-bold text-lg">{category.name}</h3>
+            </div>
+
+            {/* Konten Kolom (Kartu-kartu Paket) */}
+            <div className="flex flex-col gap-4">
+              {plans
+                .filter((plan) => plan.category_id === category.id)
+                .map((plan) => (
+                  <Card key={plan.id} className="w-full">
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-start">
+                        <span>{plan.name}</span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-6 w-6">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditPlan(plan)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicatePlan(plan)}>
+                              Duplikasi
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeletePlan(plan)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              Hapus
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </CardTitle>
+                      <CardDescription>
+                         {plan.price ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(plan.price) : 'Gratis'}
+                         {' / '}
+                         {plan.billing_cycle === 'one_time' ? 'Sekali Bayar' : 'per Bulan'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <ul className="list-disc list-inside text-sm text-muted-foreground">
+                          {(Array.isArray(plan.features)
+                            ? plan.features
+                            : typeof plan.features === 'string'
+                            ? plan.features.split('\n').filter(f => f.trim() !== '')
+                            : []
+                          ).map((feature, index) => (
+                            <li key={index}>{feature}</li>
+                          ))}
+                        </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              {plans.filter((p) => p.category_id === category.id).length === 0 && (
+                <p className="text-sm text-muted-foreground p-4 text-center">
+                  Belum ada paket di kategori ini.
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
 
       <PlanFormDialog
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedPlan(null);
+        }}
         onSave={onSavePlan}
+        onDuplicate={handleDuplicatePlan}
         plan={selectedPlan}
         categories={categories}
       />

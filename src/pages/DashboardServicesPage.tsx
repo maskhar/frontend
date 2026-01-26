@@ -92,10 +92,10 @@ const DashboardServicesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mainServices'] });
-      toast.success("Layanan utama berhasil disimpan!");
       setIsMainServiceFormOpen(false);
+      setTimeout(() => toast.success("Layanan utama berhasil disimpan!"), 0);
     },
-    onError: (error) => toast.error("Gagal menyimpan layanan utama: " + error.message),
+    onError: (error) => setTimeout(() => toast.error("Gagal menyimpan layanan utama: " + error.message), 0),
   });
 
   const deleteMainServiceMutation = useMutation({
@@ -105,10 +105,10 @@ const DashboardServicesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mainServices'] });
-      toast.success(`Layanan "${mainServiceToDelete?.title}" berhasil dihapus.`);
       setIsMainServiceAlertOpen(false);
+      setTimeout(() => toast.success(`Layanan "${mainServiceToDelete?.title}" berhasil dihapus.`), 0);
     },
-    onError: (error) => toast.error("Gagal menghapus layanan utama: " + error.message),
+    onError: (error) => setTimeout(() => toast.error("Gagal menghapus layanan utama: " + error.message), 0),
   });
 
   const howItWorksStepMutation = useMutation({
@@ -118,10 +118,10 @@ const DashboardServicesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['howItWorksSteps'] });
-      toast.success(`Langkah "Cara Kerja" berhasil disimpan!`);
       setIsHowItWorksFormOpen(false);
+      setTimeout(() => toast.success(`Langkah "Cara Kerja" berhasil disimpan!`), 0);
     },
-    onError: (error) => toast.error(`Gagal menyimpan langkah "Cara Kerja": ${error.message}`),
+    onError: (error) => setTimeout(() => toast.error(`Gagal menyimpan langkah "Cara Kerja": ${error.message}`), 0),
   });
 
   const deleteHowItWorksStepMutation = useMutation({
@@ -131,10 +131,10 @@ const DashboardServicesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['howItWorksSteps'] });
-      toast.success(`Langkah "${howItWorksStepToDelete?.title}" berhasil dihapus.`);
       setIsHowItWorksAlertOpen(false);
+      setTimeout(() => toast.success(`Langkah "${howItWorksStepToDelete?.title}" berhasil dihapus.`), 0);
     },
-    onError: (error) => toast.error(`Gagal menghapus langkah "Cara Kerja": ${error.message}`),
+    onError: (error) => setTimeout(() => toast.error(`Gagal menghapus langkah "Cara Kerja": ${error.message}`), 0),
   });
   
   const serviceItemMutation = useMutation({
@@ -144,10 +144,10 @@ const DashboardServicesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['serviceItems'] });
-      toast.success("Service item berhasil disimpan!");
       setIsServiceItemFormOpen(false);
+      setTimeout(() => toast.success("Service item berhasil disimpan!"), 0);
     },
-    onError: (error) => toast.error("Gagal menyimpan service item: " + error.message),
+    onError: (error) => setTimeout(() => toast.error("Gagal menyimpan service item: " + error.message), 0),
   });
 
   const deleteServiceItemMutation = useMutation({
@@ -157,10 +157,10 @@ const DashboardServicesPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['serviceItems'] });
-      toast.success(`Item "${serviceItemToDelete?.title}" berhasil dihapus.`);
       setIsServiceItemAlertOpen(false);
+      setTimeout(() => toast.success(`Item "${serviceItemToDelete?.title}" berhasil dihapus.`), 0);
     },
-    onError: (error) => toast.error("Gagal menghapus service item: " + error.message),
+    onError: (error) => setTimeout(() => toast.error("Gagal menghapus service item: " + error.message), 0),
   });
 
 
@@ -193,6 +193,10 @@ const DashboardServicesPage = () => {
 
   const handleEditServiceItem = (item: ServiceItem) => {
     setSelectedServiceItem(item);
+    setIsServiceItemFormOpen(true);
+  };
+  const handleAddNewServiceItem = () => {
+    setSelectedServiceItem(null);
     setIsServiceItemFormOpen(true);
   };
   const handleDeleteServiceItem = (item: ServiceItem) => {
@@ -255,6 +259,7 @@ const DashboardServicesPage = () => {
                         loading={isLoadingServiceItems}
                         onUpdate={() => queryClient.invalidateQueries({ queryKey: ['serviceItems'] })}
                         onEdit={handleEditServiceItem}
+                        onAddNew={handleAddNewServiceItem}
                         onDelete={handleDeleteServiceItem}
                     />
                 </div>

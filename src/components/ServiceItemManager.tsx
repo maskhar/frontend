@@ -25,9 +25,10 @@ export interface ServiceItem {
   created_at?: string;
   title: string;
   price_text: string;
-  image_url: string;
+  image_url: string | null; // Izinkan null
   display_order: number | null;
   type: 'visual_grid' | 'extra_service';
+  description: string | null;
 }
 
 // Komponen untuk item yang bisa di-drag
@@ -74,7 +75,14 @@ const SortableItem = ({ item, onEdit, onDelete }: { item: ServiceItem, onEdit: (
   );
 };
 
-const ServiceItemManager = ({ initialItems, loading, onUpdate, onEdit, onDelete }: { initialItems: ServiceItem[], loading: boolean, onUpdate: () => void, onEdit: (item: ServiceItem) => void, onDelete: (item: ServiceItem) => void }) => {
+const ServiceItemManager = ({ initialItems, loading, onUpdate, onEdit, onAddNew, onDelete }: { 
+  initialItems: ServiceItem[], 
+  loading: boolean, 
+  onUpdate: () => void, 
+  onEdit: (item: ServiceItem) => void, 
+  onAddNew: () => void,
+  onDelete: (item: ServiceItem) => void 
+}) => {
   const [items, setItems] = useState<ServiceItem[]>([]);
 
   useEffect(() => {
@@ -110,7 +118,7 @@ const ServiceItemManager = ({ initialItems, loading, onUpdate, onEdit, onDelete 
     <div className="space-y-6">
         <div className="flex justify-between items-center">
             <h3 className="text-xl font-semibold">Kelola Service Grid</h3>
-            <Button onClick={() => onEdit({ type: 'visual_grid' } as ServiceItem)}>Tambah Item Baru</Button>
+            <Button onClick={onAddNew}>Tambah Item Baru</Button>
         </div>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>

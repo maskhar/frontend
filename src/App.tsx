@@ -1,8 +1,3 @@
-import { createRoot } from "react-dom/client";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,8 +16,7 @@ import DashboardPage from "./pages/Dashboard";
 import DashboardContractPage from "./pages/DashboardContractPage";
 import DashboardServicesPage from "./pages/DashboardServicesPage";
 import "./index.css";
-
-const queryClient = new QueryClient();
+import { TooltipProvider } from "./components/ui/tooltip";
 
 // A component to protect routes that require authentication
 const ProtectedRoute = ({ session, loading }: { session: Session | null, loading: boolean }) => {
@@ -58,8 +52,6 @@ const App = () => {
   return (
     <BrowserRouter>
       <TooltipProvider>
-        <Toaster />
-        <Sonner richColors />
         <Routes>
           {/* --- Public Routes --- */}
           <Route path="/" element={<Index />} />
@@ -91,19 +83,4 @@ const App = () => {
   );
 };
 
-// Rendering the app in main.tsx, but keeping AppWrapper logic here
-const AppWrapper = () => (
-  <QueryClientProvider client={queryClient}>
-    <App />
-  </QueryClientProvider>
-);
-
-
-// We assume main.tsx is now:
-// import { createRoot } from "react-dom/client";
-// import AppWrapper from "./App.tsx";
-// import "./index.css";
-// createRoot(document.getElementById("root")!).render(<AppWrapper />);
-
-export default AppWrapper;
-
+export default App;
