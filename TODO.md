@@ -6,6 +6,7 @@
 - [x] **Perbaikan State Management:** Menyelesaikan bug di mana state 'edit' tetap tersangkut saat beralih ke mode 'tambah baru' di semua halaman dashboard.
 - [x] **Perbaikan RLS (Row Level Security):** Menambahkan kebijakan keamanan eksplisit untuk admin pada tabel `plans` dan `service_items` untuk memperbaiki error `violates row-level security policy`.
 - [x] **Perbaikan Render Loop:** Mengatasi *race condition* render di React dengan merestrukturisasi `App.tsx`, `main.tsx`, dan `sonner.tsx` untuk mencegah error `Cannot update a component while rendering...`.
+- [x] **Menyelesaikan error whitescreen berulang:** Memperbaiki impor yang hilang, mengatasi *race condition* di DND, dan menangani validasi ID data untuk stabilitas rendering.
 
 ## ✅ Selesai (V1)
 
@@ -23,8 +24,10 @@
   - [x] Tambah, Edit, Hapus kategori layanan.
 - [x] **Manajemen Paket Layanan:**
   - [x] Tambah, Edit, Hapus paket layanan.
-  - [x] Menampilkan paket dalam kelompok berdasarkan kategori.
-  - [x] Implementasi pengurutan paket menggunakan antarmuka drag-and-drop.
+  - [x] Mengimplementasikan ulang fitur drag-and-drop untuk pengurutan paket dan perpindahan antar kategori.
+  - [x] Menjamin kategori "Uncategorized" selalu muncul di posisi paling bawah dalam manajemen dashboard.
+  - [x] Menyempurnakan PlanCard untuk menampilkan tombol Edit, Duplikasi, Hapus, dan toggle Status secara langsung.
+  - [x] Menambahkan fungsionalitas untuk mengubah status aktif/nonaktif paket.
 
 ### Fitur Frontend (Publik)
 - [x] Halaman `/contract` diubah menjadi sepenuhnya dinamis, mengambil data dari Supabase.
@@ -36,19 +39,9 @@
 ## 🚀 Rencana Pengembangan Selanjutnya (V2 dan Seterusnya)
 
 ### Peningkatan Dashboard
-- [ ] **Rombak Manajemen Kontrak ke Tampilan Kanban:**
-  - [ ] Ubah `PlanManager` menjadi *board* dengan kategori sebagai kolom.
-  - [ ] Implementasikan DND untuk mengurutkan paket di dalam kategori.
-  - [ ] Implementasikan DND untuk memindahkan paket antar kategori.
-  - [ ] Implementasikan DND untuk mengurutkan kolom kategori itu sendiri.
-- [ ] **Fitur Duplikat Paket & Kategori:**
-    - [ ] Tambahkan tombol "Duplikat" di sebelah setiap item.
-    - [ ] Buat fungsi untuk menyalin item dengan "- Copy" ditambahkan di namanya.
-- [ ] **Manajemen Status (Aktif/Nonaktif):**
-    - [ ] Tambahkan kolom `status` di tabel `plans` dan `categories`.
-    - [ ] Tambahkan tombol *toggle* di UI dashboard untuk mengubah status.
+- [ ] **Implementasikan DND untuk mengurutkan kolom kategori itu sendiri.**
 - [ ] **Fitur "Populer":** Tambahkan checkbox "Jadikan Populer" di form edit paket untuk menyorot paket tertentu di halaman publik.
-- [x] **Manajemen Pengguna (User Roles):**
+- [ ] **Manajemen Pengguna (User Roles):**
   - [ ] Buat halaman untuk mengelola pengguna admin.
   - [ ] Kembangkan sistem peran (misal: Super Admin vs. Editor Konten) untuk membatasi akses.
 - [ ] **Analitik Sederhana:** Tampilkan grafik atau data sederhana di halaman utama dashboard (misalnya: jumlah paket, jumlah kategori).
@@ -58,6 +51,12 @@
 - [x] **Penyimpanan Gambar:** Integrasikan Supabase Storage untuk mengunggah gambar/thumbnail untuk `service_items` (Service Grid).
 
 ### Peningkatan Frontend
+- [ ] **Implementasi Halaman Katalog dengan Media Player:**
+  - [ ] Buat UI Media Player dengan data dummy (UI-first approach).
+  - [ ] Rancang arsitektur backend untuk menggabungkan data dari 2 proyek Supabase & GCS.
+  - [ ] Implementasikan Supabase Edge Function untuk mengambil dan menggabungkan data trek.
+  - [ ] Hubungkan UI frontend ke endpoint Edge Function.
+  - [ ] Tambahkan fitur-fitur media player (playlist, shuffle, repeat).
 - [ ] **Filter Konten Aktif:**
   - [ ] Saring data di halaman publik (`/contract`, `/services`) untuk hanya menampilkan kategori dan paket yang berstatus "aktif".
   - [ ] Sembunyikan kategori "Uncategorized" dari halaman publik.
@@ -76,9 +75,7 @@
 
 ### Peningkatan Teknis & Keamanan
 - [ ] **Implementasi Hapus Aman untuk Kategori:**
-  - [ ] Buat kategori "Uncategorized" secara otomatis dengan status "nonaktif".
   - [ ] Buat Supabase Function untuk memindahkan paket ke "Uncategorized" dan menyetel statusnya menjadi "nonaktif" saat kategori induknya dihapus.
 - [ ] **Pengujian (Testing):** Tambahkan unit test untuk fungsi-fungsi kritis dan E2E (End-to-End) test untuk alur utama seperti login dan CRUD.
 - [ ] **CI/CD Pipeline:** Siapkan alur kerja (workflow) GitHub Actions atau sejenisnya untuk otomatisasi testing dan deployment.
 - [ ] **Supabase Edge Functions:** Pindahkan logika yang sensitif atau memerlukan komputasi berat ke Supabase Edge Functions untuk keamanan dan performa yang lebih baik.
-
