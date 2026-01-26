@@ -31,3 +31,4 @@ jspm_packages/
 # Environment variables
 .env
 .env.local
+.env.data-b
