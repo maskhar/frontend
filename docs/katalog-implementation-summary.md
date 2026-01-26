@@ -1,67 +1,65 @@
-# Dokumentasi Implementasi Halaman Katalog
+# Dokumentasi Arsitektur Halaman Katalog Eksternal
 
 **Tanggal:** 27 Januari 2026
-**Status:** Dalam Pengembangan (Fase 1)
+**Status:** Fase 1 Selesai - Fungsional
 
 ## 1. Latar Belakang & Tujuan
 
-Dokumen ini merangkum arsitektur dan detail implementasi teknis untuk halaman **Katalog Musik**. Tujuan utama adalah membangun halaman yang aman, performan, dan mudah dipelihara untuk menampilkan katalog musik yang datanya bersumber dari database Supabase eksternal (selanjutnya disebut **Proyek B**).
+Dokumen ini merangkum arsitektur final dan detail implementasi teknis untuk halaman **Katalog Musik** publik. Halaman ini dibangun di dalam proyek Frontend (selanjutnya disebut **Proyek A**) namun bertujuan untuk menampilkan data musik secara aman dari database Supabase yang terpisah (milik platform SoundPub Dashboard, selanjutnya disebut **Proyek B**).
 
-Proyek ini mengatasi masalah awal di mana halaman katalog menampilkan layar putih (*whitescreen*) dan bertujuan untuk mengimplementasikan fungsionalitas penuh, termasuk tampilan logis untuk rilisan Single, EP, dan Album.
+Proyek ini mengatasi masalah awal di mana halaman katalog menampilkan layar putih (*whitescreen*) dan berbagai error lainnya, yang berpuncak pada penemuan dan implementasi arsitektur interaksi antar-proyek yang aman dan efisien.
 
-## 2. Arsitektur Sistem
+## 2. Ringkasan Masalah & Proses Investigasi
 
-Untuk memastikan keamanan dan pemisahan tanggung jawab, sistem ini dirancang dengan arsitektur perantara (intermediary).
+Perjalanan untuk mencapai solusi ini mengungkap beberapa akar masalah yang berbeda:
 
-**Alur Data:**
-`Frontend (React)` ➡️ `Edge Function (di Proyek A)` ➡️ `Database (di Proyek B)`
+1.  **Error Frontend:** Masalah awal adalah error di sisi klien seperti `supabase.functions.getUrl is not a function` dan masalah *cache* Vite, yang mengindikasikan adanya ketidakcocokan antara versi library dan cara fungsi dipanggil.
+2.  **Error Koneksi & Nama Kolom:** Setelah masalah frontend teratasi, kami mengalami serangkaian *error* dari *backend* (misalnya `column does not exist`). Ini terjadi karena ketidakcocokan antara "Kontrak Data" yang diasumsikan di kode dengan skema database yang sebenarnya.
+3.  **RLS & Keamanan Data:** Upaya awal untuk membuka akses data publik dengan menambahkan kebijakan RLS (`CREATE POLICY ... USING (status = 'active')`) berhasil menampilkan data, **namun menimbulkan masalah keamanan yang kritis**: kebijakan tersebut bersifat aditif (`OR`) dan secara tidak sengaja memberikan akses kepada semua pengguna yang sudah login (artis, label) untuk melihat data rilisan aktif milik pengguna lain, melanggar privasi data.
+4.  **Akar Masalah Sebenarnya Terungkap:** Akar masalah utama bukanlah pada kegagalan kode, melainkan **kesalahpahaman arsitektur**. Platform hosting (Lovable/Proyek B) ternyata **sudah menyediakan *endpoint* Edge Function `get-catalog-tracks` yang aman dan siap pakai**. Upaya kami untuk membuat Edge Function duplikat di Proyek A menjadi tidak perlu dan rumit.
 
-- **Frontend (Aplikasi React):** Bertanggung jawab murni untuk tampilan (UI) dan pengalaman pengguna (UX). Frontend **tidak pernah** memiliki akses langsung ke database Proyek B.
-- **Edge Function (`get-catalog-tracks`):** Berperan sebagai **Penjaga Gerbang (Gatekeeper)** yang aman. Fungsi ini di-*deploy* di Supabase **Proyek A** (proyek yang sama dengan frontend). Tugasnya adalah menerima permintaan dari frontend, mengambil data yang diperlukan dari Proyek B dengan aman, memformatnya sesuai kontrak, dan mengirimkannya kembali ke frontend.
-- **Database (Proyek B):** Merupakan sumber data utama yang berisi tabel `tracks` dan `releases`. Akses ke database ini dari Edge Function menggunakan kunci API `anon` yang bersifat **Read-Only (hanya bisa membaca)**, sehingga mencegah segala kemungkinan modifikasi atau penghapusan data dari luar.
+## 3. Arsitektur Final: Dua "Jalan Tol" yang Aman & Terpisah
 
-## 3. Kontrak Data (Data Contract)
+Arsitektur final yang diimplementasikan adalah praktik terbaik untuk skenario ini, memisahkan akses data untuk pengguna publik dan pengguna terautentikasi.
 
-"Kontrak Data" adalah perjanjian antara frontend dan backend mengenai struktur data yang akan dipertukarkan. Ini memastikan kedua tim bisa bekerja secara independen dan mengurangi risiko *error*.
+### Alur 1: Jalan Tol Publik (Frontend Proyek A → Backend Proyek B)
 
-Berdasarkan analisis skema database, data yang dikirim dari *Edge Function* ke *frontend* untuk setiap lagu akan memiliki struktur sebagai berikut:
+Ini adalah alur untuk halaman `/katalog` publik.
 
-```json
-{
-  "id": "uuid", // ID dari tabel tracks
-  "title": "string", // Judul dari tabel tracks
-  "audioSrc": "string", // URL audio dari kolom audio_url di tabel tracks
-  "isExplicit": "boolean", // Status dari explicit_lyrics di tabel tracks
-  "genre": "string", // Genre dari tabel tracks
-  "release": {
-    "title": "string", // Judul dari tabel releases
-    "artistName": "string", // Nama artis dari kolom artist_name di tabel releases
-    "albumArt": "string", // URL cover dari kolom cover_art di tabel releases
-    "type": "string" // Tipe rilisan (e.g., 'Single', 'EP', 'Album')
-  }
-}
-```
+`Frontend (React, Proyek A)` ➡️ `GET Request` ➡️ `Edge Function "get-catalog-tracks" (di Proyek B)` ➡️ `Database (Proyek B)`
 
-## 4. Implementasi Teknis
+1.  **Frontend (`Katalog.tsx`):**
+    *   Menggunakan `fetch` standar untuk memanggil *endpoint* URL yang sudah ditentukan secara langsung: `https://[project-b-ref].supabase.co/functions/v1/get-catalog-tracks`.
+    *   Menyertakan `apikey` (kunci `anon` publik) dari **Proyek B** di dalam *header* `Authorization` dan `apikey` untuk otentikasi.
 
-### Backend (Edge Function)
-- **Lokasi Kode:** `supabase/functions/get-catalog-tracks/index.ts`
-- **Tugas:**
-    1. Menggunakan **Supabase Secrets** (`PROJECT_B_URL`, `PROJECT_B_ANON_KEY`) untuk menyimpan kredensial Proyek B secara aman. Penggunaan nama tanpa prefix `SUPABASE_` wajib untuk menghindari konflik dengan variabel sistem.
-    2. Menjalankan *query* spesifik ke database Proyek B untuk menggabungkan data dari tabel `tracks` dan `releases` menggunakan relasi *foreign key* (`releases_id`).
-    3. **Hanya memilih kolom yang diperlukan** sesuai "Kontrak Data" untuk meningkatkan performa dan keamanan.
-    4. Memformat data hasil *query* ke dalam struktur JSON yang telah disepakati.
-    5. Menyertakan **CORS Headers** agar dapat diakses oleh domain frontend.
+2.  **Edge Function (di Proyek B, Disediakan oleh Platform):**
+    *   Bertindak sebagai **Penjaga Gerbang (Gatekeeper)**.
+    *   Menggunakan `service_role_key` internal yang aman untuk **melewati (bypass) RLS** di dalam lingkungannya sendiri.
+    *   Memiliki logika bisnis yang terkunci: hanya mengambil rilisan dengan `status = 'active'`, memilih kolom-kolom tertentu yang aman untuk publik, dan menggabungkannya dengan data lagu.
+    *   Mengembalikan data dalam format JSON yang bersih dan siap pakai.
 
-### Frontend (React Component)
-- **Lokasi Kode:** `src/pages/Katalog.tsx`
-- **Tugas:**
-    1. Memanggil *endpoint* Edge Function saat komponen dimuat. URL fungsi dibangun secara manual (`<supabase_url>/functions/v1/get-catalog-tracks`) untuk menghindari masalah dependensi pada library client.
-    2. Menangani tiga state utama: *loading* (saat data diambil), *error* (jika pengambilan gagal), dan *success* (saat data berhasil diterima).
-    3. **(Fase 2)** Mengimplementasikan logika untuk mengelompokkan daftar lagu yang diterima berdasarkan rilisannya (`release.title`).
-    4. **(Fase 2)** Menampilkan komponen secara dinamis berdasarkan tipe rilis (Single vs Album/EP) dan menampilkan *badge* untuk `isExplicit`.
+**Keamanan Alur Ini:** Sangat aman. *Frontend* tidak pernah memiliki akses ke database. `service_role_key` tidak pernah terekspos ke publik. Logika bisnis terpusat dan terkontrol di *backend*.
 
-## 5. Keamanan
-- **Akses Terbatas:** Kunci API yang digunakan untuk Proyek B adalah `anon key` yang tidak memiliki izin untuk menulis, mengubah, atau menghapus data.
-- **Isolasi Logika:** Logika bisnis dan *query* database sepenuhnya terisolasi di dalam *Edge Function*. Frontend tidak memiliki pengetahuan tentang struktur database, sehingga mengurangi permukaan serangan.
-- **Manajemen Kredensial:** Kredensial sensitif dikelola menggunakan Supabase Secrets yang terenkripsi, bukan di-hardcode di dalam kode.
+### Alur 2: Jalan Tol Pribadi (Dashboard SoundPub - Proyek B)
+
+Ini adalah alur untuk pengguna yang sudah login di dalam *dashboard*.
+
+`Dashboard (React, Proyek B)` ➡️ `Supabase Client (JS)` ➡️ `RLS Policies (di Database B)` ➡️ `Database (Proyek B)`
+
+1.  **Dashboard (Proyek B):**
+    *   Menggunakan Supabase Client standar yang diinisialisasi dengan kredensial Proyek B.
+    *   Saat pengguna login, Supabase Client secara otomatis mengelola JWT (kartu identitas pengguna).
+
+2.  **RLS Policies (di Database B):**
+    *   Setiap kali Supabase Client melakukan *query* (`select`, `insert`, `update`), "satpam" RLS di database akan memeriksa JWT pengguna.
+    *   RLS menerapkan aturan seperti `USING (artist_name = get_user_full_name(auth.uid()))`, memastikan pengguna hanya bisa melihat atau mengubah data mereka sendiri.
+
+**Keamanan Alur Ini:** Sangat aman. Setiap permintaan data divalidasi di level database berdasarkan identitas pengguna yang login.
+
+## 4. Kesimpulan
+
+Dengan memisahkan kedua alur ini, kita berhasil mencapai dua tujuan utama secara bersamaan:
+1.  **Menyediakan data katalog publik** untuk situs eksternal (Proyek A) secara efisien dan aman.
+2.  **Menjaga keamanan dan privasi data** multi-pengguna di dalam aplikasi Dashboard SoundPub (Proyek B) dengan RLS yang ketat.
+
+Arsitektur ini adalah solusi yang tangguh dan skalabel untuk mengelola interaksi antara layanan publik dan platform internal yang aman.

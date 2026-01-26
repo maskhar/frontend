@@ -1,0 +1,9 @@
+﻿table,Policy name,Command,Applies to,Rule expression
+tracks,Artists can view their tracks,SELECT,public,"Using(has_role(auth.uid(), 'artist'::app_role) AND ((artist_name = get_user_full_name(auth.uid())) OR (artists @> jsonb_build_array(jsonb_build_object('name', get_user_full_name(auth.uid())))) OR (EXISTS ( SELECT 1 FROM releases WHERE ((releases.id = tracks.release_id) AND (releases.artist_name = get_user_full_name(auth.uid())))))))"
+tracks,Admins can manage all tracks,ALL,public,Usingis_admin(auth.uid())
+tracks,Labels can manage tracks for their releases,ALL,public,"Using(has_role(auth.uid(), 'label'::app_role) AND (release_id IN ( SELECT releases.id FROM releases WHERE (releases.label_id = auth.uid()))))"
+tracks,Whitelabels can manage tracks for their releases,ALL,public,"Using(has_role(auth.uid(), 'whitelabel'::app_role) AND (release_id IN ( SELECT releases.id FROM releases WHERE (releases.label_id = auth.uid()))))"
+releases,Artists can view their releases,SELECT,public,"Using(has_role(auth.uid(), 'artist'::app_role) AND (artist_name = get_user_full_name(auth.uid())))"
+releases,Admins can manage all releases,ALL,public,Usingis_admin(auth.uid())
+releases,Labels can manage their releases,ALL,public,"Using(has_role(auth.uid(), 'label'::app_role) AND (label_id = auth.uid()))"
+releases,Whitelabels can manage their releases,ALL,public,"Using(has_role(auth.uid(), 'whitelabel'::app_role) AND (label_id = auth.uid()))"

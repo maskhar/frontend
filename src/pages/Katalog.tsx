@@ -4,64 +4,115 @@ import Footer from '@/components/Footer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton for loading state
-import { PlayCircle, PauseCircle, Search, Music4 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PlayCircle, PauseCircle, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client from frontend project
 import { toast } from 'sonner';
 
-// Definisikan tipe data untuk sebuah lagu yang diharapkan dari Edge Function
-type Track = {
-  id: string; // ID dari database (UUID)
+// Tipe data sesuai dengan output dari Edge Function Lovable
+interface CatalogTrack {
+  id: string;
   title: string;
-  artist: string;
-  album: string;
-  albumArtUrl: string; // URL ke cover album di GCS
-  audioSrc: string; // URL ke file audio di GCS
-  duration: number; // Durasi dalam detik
-};
+  artist_name: string;
+  audio_url: string;
+  explicit_lyrics: boolean;
+  duration: number | null;
+}
+
+interface CatalogRelease {
+  id: string;
+  title: string;
+  artist_name: string;
+  cover_url: string | null;
+  release_type: string;
+  tracks: CatalogTrack[];
+}
+
+// Tipe data yang "diratakan" untuk kemudahan UI
+interface FlatTrack {
+  id: string;
+  title: string;
+  artistName: string;
+  albumTitle: string;
+  albumArtUrl: string;
+  audioSrc: string;
+  isExplicit: boolean;
+  duration: number | null;
+}
 
 const KatalogPage = () => {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [tracks, setTracks] = useState<FlatTrack[]>([]);
+  const [currentTrack, setCurrentTrack] = useState<FlatTrack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // URL Edge Function Anda - Dibangun secara manual untuk menghindari masalah .getUrl()
-  // Pastikan VITE_SUPABASE_URL sudah diatur di file .env Anda
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/get-catalog-tracks`;
 
   useEffect(() => {
-    const fetchTracks = async () => {
+    const fetchCatalog = async () => {
       setLoading(true);
       setError(null);
+
+      // Endpoint dan Kunci API dari Proyek B (Lovable)
+      const edgeFunctionUrl = 'https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=100&offset=0';
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wa3Z2ZGduaGhvcGtrZWFva3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMjM5NDUsImV4cCI6MjA4MzU5OTk0NX0.UqDBz-xZYR5GluL7t3gItuJuWZipI9xlwt32KEIZrsc';
+
       try {
-        const response = await fetch(edgeFunctionUrl);
+        const response = await fetch(edgeFunctionUrl, {
+          method: 'GET', // Method adalah GET
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey, // Header apikey sesuai instruksi Lovable
+          },
+        });
+
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Gagal memuat trek dari katalog.');
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
-        const data: Track[] = await response.json();
-        setTracks(data);
-        if (data.length > 0) {
-          setCurrentTrack(data[0]); // Atur lagu pertama sebagai default
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Gagal mengambil data katalog dari endpoint.');
         }
+        
+        const releases: CatalogRelease[] = data.data || [];
+
+        const allTracks: FlatTrack[] = releases.flatMap(release => 
+          (release.tracks || []).map(track => ({ // Tambahkan pengecekan jika tracks null/undefined
+            id: track.id,
+            title: track.title,
+            artistName: release.artist_name,
+            albumTitle: release.title,
+            albumArtUrl: release.cover_url || '/placeholder.svg',
+            audioSrc: track.audio_url,
+            isExplicit: track.explicit_lyrics,
+            duration: track.duration,
+          }))
+        );
+
+        setTracks(allTracks);
+        if (allTracks.length > 0) {
+          setCurrentTrack(allTracks[0]);
+        }
+
       } catch (err) {
         console.error('Error fetching catalog tracks:', err);
-        setError((err as Error).message || 'Terjadi kesalahan tak terduga.');
-        toast.error((err as Error).message || 'Terjadi kesalahan tak terduga.');
+        const errorMessage = (err as Error).message || 'Terjadi kesalahan tak terduga.';
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTracks();
-  }, [edgeFunctionUrl]);
+    fetchCatalog();
+  }, []);
 
-  const handleTrackSelect = (track: Track) => {
+  const handleTrackSelect = (track: FlatTrack) => {
     setCurrentTrack(track);
   };
+  
+  // ... (Sisa dari JSX tidak perlu diubah)
 
   if (loading) {
     return (
@@ -70,9 +121,7 @@ const KatalogPage = () => {
         <main className="flex-grow container mx-auto px-4 py-12">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-4">Memuat Musik...</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Mohon tunggu sebentar, kami sedang menyiapkan katalog untuk Anda.
-            </p>
+            {/* ... */}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Skeleton className="h-96 w-full rounded-lg" />
@@ -95,7 +144,6 @@ const KatalogPage = () => {
         <main className="flex-grow container mx-auto px-4 py-12 text-center">
           <h1 className="text-4xl font-bold mb-4 text-red-600">Error!</h1>
           <p className="text-lg text-muted-foreground">{error}</p>
-          <p className="text-md text-muted-foreground mt-4">Pastikan Edge Function sudah dideploy dan secrets sudah diatur dengan benar.</p>
         </main>
         <Footer />
       </div>
@@ -131,11 +179,7 @@ const KatalogPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input type="search" placeholder="Cari lagu, artis, atau genre..." className="pl-10 w-full" />
             </div>
-            <div className="flex items-center gap-2">
-                <Button variant="outline">Genre</Button>
-                <Button variant="outline">Mood</Button>
-                <Button variant="outline">Instrumen</Button>
-            </div>
+            {/* ... Filter buttons ... */}
         </div>
         
         <Card className="overflow-hidden">
@@ -145,12 +189,12 @@ const KatalogPage = () => {
               {currentTrack && (
                 <>
                   <img
-                    src={currentTrack.albumArtUrl || '/placeholder.svg'}
-                    alt={`Album art for ${currentTrack.album}`}
+                    src={currentTrack.albumArtUrl}
+                    alt={`Album art for ${currentTrack.albumTitle}`}
                     className="w-full max-w-[256px] h-auto aspect-square rounded-lg shadow-lg object-cover mb-6"
                   />
                   <h2 className="text-2xl font-semibold text-center">{currentTrack.title}</h2>
-                  <p className="text-muted-foreground mb-4">{currentTrack.artist}</p>
+                  <p className="text-muted-foreground mb-4">{currentTrack.artistName}</p>
                   
                   <audio 
                     controls 
@@ -187,7 +231,7 @@ const KatalogPage = () => {
                     </div>
                     <div className="flex-grow">
                       <p className="font-semibold">{track.title}</p>
-                      <p className="text-sm text-muted-foreground">{track.artist}</p>
+                      <p className="text-sm text-muted-foreground">{track.artistName}</p>
                     </div>
                   </Button>
                 ))}
