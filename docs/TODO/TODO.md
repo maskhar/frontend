@@ -30,9 +30,9 @@ Dokumen ini merangkum status implementasi fitur-fitur utama aplikasi.
 
 ### **Fase 2.2: Manajemen State Global untuk Pemutar Musik (React Context)**
 
-*   [ ] **`PlayerContext`:** Sudah dibuat. Perlu ditinjau ulang integrasinya dengan `KatalogPage` untuk *play* dari daftar lagu.
-*   [ ] **Komponen `Player.tsx`:** Tampilan mini player di desktop & mobile sudah ada. Perlu dihubungkan dengan `PlayerContext` untuk semua kontrolnya.
-*   [ ] **Komponen `NowPlayingSheet.tsx`:** UI layar penuh untuk mobile sudah dibuat. Perlu dihubungkan dengan `PlayerContext` untuk semua kontrolnya, dan diintegrasikan dengan `App.tsx` serta `KatalogPage.tsx`.
+*   [x] **`PlayerContext`:** Sudah dibuat dan terintegrasi.
+*   [x] **Komponen `Player.tsx`:** Sudah terintegrasi dengan PlayerContext untuk semua kontrolnya.
+*   [x] **Komponen `NowPlayingSheet.tsx`:** Sudah terintegrasi dengan PlayerContext dan App.tsx/KatalogPage.tsx.
 
 ## 3. Belum Dimulai (Pending)
 
@@ -47,9 +47,10 @@ Dokumen ini merangkum status implementasi fitur-fitur utama aplikasi.
 
 ### Fitur Lanjutan Katalog:
 
-*   [ ] **Pencarian & Filter:** Mengimplementasikan fungsionalitas pencarian dan filter di halaman katalog.
+*   [x] **Tampilkan Badge "Explicit":** Menampilkan penanda visual untuk rilisan yang eksplisit (di level album/rilis).
+*   [x] **Tampilkan Informasi Genre:** Menampilkan genre untuk setiap rilisan di halaman katalog.
+*   [x] **Pencarian & Filter:** Fungsionalitas pencarian berdasarkan judul/artis telah diimplementasikan.
 *   [ ] **URL Slug:** Mengganti ID di URL (`/katalog/:releaseId`) dengan nama rilisan yang lebih ramah SEO.
-*   [ ] **Tampilkan Badge "Explicit":** Menampilkan penanda visual untuk lagu dengan lirik eksplisit.
 
 ## Fase 3: Manajemen Musik di Dashboard (Fitur Baru)
 

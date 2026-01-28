@@ -17,7 +17,7 @@ serve(async (req) => {
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      { auth: { persistSession: false } },
     );
 
     // Parse query params from URL
@@ -30,7 +30,8 @@ serve(async (req) => {
     // Build query for active releases with tracks
     let query = supabaseAdmin
       .from("releases")
-      .select(`
+      .select(
+        `
         id,
         title,
         artist_name,
@@ -47,9 +48,11 @@ serve(async (req) => {
           genre,
           audio_url,
           clip_url,
-          duration
+          duration,
+          explicit_lyrics
         )
-      `)
+      `,
+      )
       .eq("status", "active")
       .is("archived_at", null)
       .order("release_date", { ascending: false });
@@ -71,6 +74,12 @@ serve(async (req) => {
       console.error("Error fetching releases:", releasesError);
       throw releasesError;
     }
+
+    // Add is_explicit flag to each release
+    const processedReleases = (releases || []).map(release => ({
+      ...release,
+      is_explicit: release.tracks.some(track => track.explicit_lyrics === true)
+    }));
 
     // Get total count for pagination
     let countQuery = supabaseAdmin
@@ -95,7 +104,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        data: releases || [],
+        data: processedReleases, // Return the processed data
         pagination: {
           total: count || 0,
           limit,
@@ -106,22 +115,22 @@ serve(async (req) => {
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      }
+      },
     );
   } catch (error: unknown) {
     console.error("Edge function error:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: errorMessage,
         data: [],
-        pagination: { total: 0, limit: 50, offset: 0, hasMore: false }
+        pagination: { total: 0, limit: 50, offset: 0, hasMore: true },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
-      }
+      },
     );
   }
 });

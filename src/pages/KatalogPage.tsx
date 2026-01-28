@@ -4,6 +4,8 @@ import Navbar from '@/components/Navbar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePlayer, Track } from '@/contexts/PlayerContext';
@@ -38,16 +40,21 @@ const KatalogPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { play, nowPlaying, isPlaying } = usePlayer();
 
-  const fetchReleases = useCallback(async (currentOffset: number) => {
+  const fetchReleases = useCallback(async (currentOffset: number, search = "") => {
     if (currentOffset === 0) setLoading(true);
     else setLoadingMore(true);
     
     setError(null);
-    const edgeFunctionUrl = `https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=${PAGE_LIMIT}&offset=${currentOffset}`;
+    let edgeFunctionUrl = `https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=${PAGE_LIMIT}&offset=${currentOffset}`;
+    if (search) {
+      edgeFunctionUrl += `&search=${encodeURIComponent(search)}`;
+    }
+
     const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wa3Z2ZGduaGhvcGtrZWFva3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMjM5NDUsImV4cCI6MjA4MzU5OTk0NX0.UqDBz-xZYR5GluL7t3gItuJuWZipI9xlwt32KEIZrsc';
 
     try {
@@ -61,19 +68,29 @@ const KatalogPage = () => {
 
       const fetchedReleases: CatalogRelease[] = data.data || [];
       
+      // If it's a new search, replace. Otherwise, append safely with duplicate check.
       setReleases(prevReleases => {
-        const existingIds = new Set(prevReleases.map(r => r.id));
+        const existingReleases = currentOffset === 0 ? [] : prevReleases;
+        const existingIds = new Set(existingReleases.map(r => r.id));
         const newUniqueReleases = fetchedReleases.filter(r => !existingIds.has(r.id));
-        return [...prevReleases, ...newUniqueReleases];
+        return [...existingReleases, ...newUniqueReleases];
       });
 
       setHasMore(data.pagination.hasMore);
       setOffset(currentOffset + PAGE_LIMIT);
       setTotalReleases(data.pagination.total || 0);
 
-      if (currentOffset === 0 && fetchedReleases.length > 0) {
+      // Only auto-select release on initial load, not on search
+      if (currentOffset === 0 && fetchedReleases.length > 0 && !search) {
         setSelectedRelease(fetchedReleases[0]);
       }
+      // If search returns results, select the first one.
+      if (currentOffset === 0 && fetchedReleases.length > 0 && search) {
+        setSelectedRelease(fetchedReleases[0]);
+      } else if (currentOffset === 0 && fetchedReleases.length === 0) {
+        setSelectedRelease(null); // Clear selection if search returns no results
+      }
+
     } catch (err) {
       const errorMessage = (err as Error).message || 'Terjadi kesalahan tak terduga.';
       setError(errorMessage);
@@ -84,8 +101,15 @@ const KatalogPage = () => {
     }
   }, []);
 
+  const handleSearch = () => {
+    setOffset(0);
+    setReleases([]); // Clear existing releases before new search
+    setHasMore(true); // Reset hasMore
+    fetchReleases(0, searchTerm);
+  };
+
   useEffect(() => {
-    fetchReleases(0);
+    fetchReleases(0, "");
   }, [fetchReleases]);
 
   const observer = useRef<IntersectionObserver>();
@@ -142,6 +166,16 @@ const KatalogPage = () => {
             Jelajahi rilisan terbaru dari artis-artis independen.
           </p>
         </div>
+        <div className="flex w-full max-w-sm items-center space-x-2 mx-auto mb-12">
+          <Input 
+            type="text" 
+            placeholder="Cari berdasarkan judul atau artis..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()} // Optional: trigger search on Enter
+          />
+          <Button type="button" onClick={() => handleSearch()}>Cari</Button>
+        </div>
         <div className="flex flex-col md:flex-row gap-8">
           <main className="hidden md:block w-full md:w-1/3">
             <div className="sticky top-28">
@@ -155,8 +189,14 @@ const KatalogPage = () => {
                 <div className="max-w-xs mx-auto">
                   <div className="text-center mb-8">
                     <img src={selectedRelease.cover_url || '/placeholder.svg'} alt={`Cover for ${selectedRelease.title}`} className="w-full h-auto aspect-square rounded-lg shadow-2xl object-cover mb-6 mx-auto" />
-                    <h2 className="text-2xl font-bold">{selectedRelease.title}</h2>
+                    <div className="flex items-center justify-center gap-2">
+                        <h2 className="text-2xl font-bold">{selectedRelease.title}</h2>
+                        {(selectedRelease.tracks || []).some(track => track.explicit_lyrics === true) && (
+                            <Badge variant="destructive">E</Badge>
+                        )}
+                    </div>
                     <p className="text-lg text-muted-foreground">{selectedRelease.artist_name}</p>
+                    <p className="text-sm text-muted-foreground/80">{selectedRelease.genre}</p>
                   </div>
                   <div className="space-y-1">
                     {(selectedRelease.tracks || []).map((track, index) => (
@@ -169,10 +209,7 @@ const KatalogPage = () => {
                             {nowPlaying?.id === track.id && isPlaying ? <Pause size={16} /> : <Play size={16} />}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <p className={cn("font-semibold", nowPlaying?.id === track.id && "text-primary")}>{track.title}</p>
-                              {track.explicit_lyrics && <Badge variant="destructive" className="text-[8px] h-4 px-1">Explicit</Badge>}
-                            </div>
+                            <p className={cn("font-semibold", nowPlaying?.id === track.id && "text-primary")}>{track.title}</p>
                             <p className="text-sm text-muted-foreground">{track.artist_name}</p>
                           </div>
                         </div>
@@ -189,13 +226,18 @@ const KatalogPage = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {releases.map((release, index) => {
                 const isLastElement = releases.length === index + 1;
+                const isReleaseExplicit = (release.tracks || []).some(track => track.explicit_lyrics === true);
                 return (
                   <div ref={isLastElement ? lastReleaseElementRef : null} key={release.id} className="cursor-pointer group" onClick={() => handleReleaseSelect(release)}>
-                    <Card className={cn("overflow-hidden border-2", selectedRelease?.id === release.id ? "border-primary" : "border-transparent")}>
+                    <Card className={cn("overflow-hidden border-2 relative", selectedRelease?.id === release.id ? "border-primary" : "border-transparent")}>
                       <img src={release.cover_url || '/placeholder.svg'} alt={release.title} className="w-full h-auto object-cover aspect-square transition-transform group-hover:scale-105" />
+                      {isReleaseExplicit && (
+                        <Badge variant="destructive" className="absolute top-2 right-2">E</Badge>
+                      )}
                     </Card>
                     <h3 className="font-semibold text-sm mt-2 truncate">{release.title}</h3>
                     <p className="text-xs text-muted-foreground truncate">{release.artist_name}</p>
+                    <p className="text-[10px] text-muted-foreground/80 truncate">{release.genre}</p>
                   </div>
                 );
               })}

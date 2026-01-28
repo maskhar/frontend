@@ -33,6 +33,7 @@ Halaman katalog menggunakan pendekatan desain responsif yang beradaptasi dengan 
 Untuk mengelola status pemutaran di seluruh aplikasi, kami mengimplementasikan **React Context (`PlayerContext`)**.
 - **State Terpusat:** Mengelola `playlist`, `nowPlaying`, `isPlaying`, `volume`, `progress`, `isShuffle`, dan `repeatMode`.
 - **Akses Global:** `PlayerProvider` membungkus seluruh aplikasi di `App.tsx`, memungkinkan komponen mana pun untuk mengakses dan mengontrol pemutar.
+- **Catatan (28 Januari 2026):** Integrasi `PlayerContext` dengan `KatalogPage`, `Player.tsx`, dan `NowPlayingSheet.tsx` kini telah selesai, membuat pemutar musik berfungsi secara global di seluruh aplikasi.
 
 ### 3.3. Komponen Pemutar (`Player.tsx` & `NowPlayingSheet.tsx`)
 - **Pemutar Bawah:** Komponen `<Player />` selalu terlihat di bagian bawah layar setelah musik dimulai.
@@ -51,3 +52,19 @@ Untuk menangani katalog yang besar dan batasan 100 item per permintaan dari API,
 - **Isolasi Logika:** Logika bisnis dan *query* database terisolasi di dalam *Edge Function*.
 - **Keamanan Audio:** URL audio asli disembunyikan dari pengguna biasa dengan mengambilnya sebagai `Blob` dan membuat `blob:url` sementara. Klik kanan juga dinonaktifkan untuk mencegah "Save Audio As...".
 - **Pemisahan Alur:** Alur data untuk katalog publik (via *Edge Function*) sepenuhnya terpisah dari alur data untuk pengguna yang sudah login di *dashboard* (yang menggunakan RLS).
+
+## 5. Pembaruan Fitur (28 Januari 2026)
+
+### 5.1. Filter Pencarian
+- Halaman katalog kini dilengkapi dengan fungsi pencarian yang memungkinkan pengguna memfilter rilisan berdasarkan judul atau nama artis.
+- Fitur ini terintegrasi dengan *Edge Function* yang sudah ada, yang mendukung parameter `search`.
+- Pencarian dipicu saat pengguna menekan tombol "Cari" atau tombol "Enter", kemudian memuat ulang daftar rilisan sesuai dengan hasil pencarian.
+
+### 5.2. Penanda Konten Eksplisit
+- Sebuah *badge* "E" akan muncul pada sampul rilis jika salah satu lagu di dalamnya mengandung konten eksplisit.
+- Logika ini dihitung di sisi *frontend* dengan memeriksa properti `explicit_lyrics` pada setiap lagu dalam sebuah rilis, untuk menghindari ketergantungan pada perubahan *backend* yang sebelumnya bermasalah.
+- *Badge* ini ditampilkan baik pada tampilan grid utama maupun pada tampilan detail rilis.
+
+### 5.3. Tampilan Informasi Genre
+- Informasi genre kini ditampilkan untuk setiap rilis, baik pada tampilan grid maupun pada tampilan detail, memberikan konteks tambahan bagi pengguna.
+- Data ini sudah tersedia dari respons API *Edge Function* sehingga dapat langsung diimplementasikan di UI.
