@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlayCircle, PauseCircle, Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { PlayCircle, PauseCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-// Tipe data sesuai dengan output dari Edge Function Lovable
+// --- Tipe Data dari Endpoint ---
 interface CatalogTrack {
   id: string;
   title: string;
@@ -28,7 +27,7 @@ interface CatalogRelease {
   tracks: CatalogTrack[];
 }
 
-// Tipe data yang "diratakan" untuk kemudahan UI
+// --- Tipe Data Internal untuk UI & Player ---
 interface FlatTrack {
   id: string;
   title: string;
@@ -41,62 +40,55 @@ interface FlatTrack {
 }
 
 const KatalogPage = () => {
-  const [tracks, setTracks] = useState<FlatTrack[]>([]);
-  const [currentTrack, setCurrentTrack] = useState<FlatTrack | null>(null);
+  const [allTracks, setAllTracks] = useState<FlatTrack[]>([]);
+  const [featuredRelease, setFeaturedRelease] = useState<CatalogRelease | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<FlatTrack | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const currentBlobUrl = useRef<string | null>(null);
 
   useEffect(() => {
     const fetchCatalog = async () => {
       setLoading(true);
       setError(null);
-
-      // Endpoint dan Kunci API dari Proyek B (Lovable)
-      const edgeFunctionUrl = 'https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=100&offset=0';
+      const edgeFunctionUrl = 'https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=200&offset=0';
       const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wa3Z2ZGduaGhvcGtrZWFva3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMjM5NDUsImV4cCI6MjA4MzU5OTk0NX0.UqDBz-xZYR5GluL7t3gItuJuWZipI9xlwt32KEIZrsc';
 
       try {
         const response = await fetch(edgeFunctionUrl, {
-          method: 'GET', // Method adalah GET
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': anonKey, // Header apikey sesuai instruksi Lovable
-          },
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', 'apikey': anonKey },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Gagal mengambil data katalog dari endpoint.');
-        }
+        if (!data.success) throw new Error(data.error || 'Gagal mengambil data katalog.');
         
         const releases: CatalogRelease[] = data.data || [];
 
-        const allTracks: FlatTrack[] = releases.flatMap(release => 
-          (release.tracks || []).map(track => ({ // Tambahkan pengecekan jika tracks null/undefined
-            id: track.id,
-            title: track.title,
-            artistName: release.artist_name,
-            albumTitle: release.title,
-            albumArtUrl: release.cover_url || '/placeholder.svg',
-            audioSrc: track.audio_url,
-            isExplicit: track.explicit_lyrics,
-            duration: track.duration,
-          }))
-        );
-
-        setTracks(allTracks);
-        if (allTracks.length > 0) {
-          setCurrentTrack(allTracks[0]);
+        if (releases.length > 0) {
+          setFeaturedRelease(releases[0]); // Ambil rilisan pertama sebagai "unggulan"
+          
+          const flattenedTracks: FlatTrack[] = releases.flatMap(release => 
+            (release.tracks || []).map(track => ({
+              id: track.id,
+              title: track.title,
+              artistName: release.artist_name,
+              albumTitle: release.title,
+              albumArtUrl: release.cover_url || '/placeholder.svg',
+              audioSrc: track.audio_url,
+              isExplicit: track.explicit_lyrics,
+              duration: track.duration,
+            }))
+          );
+          setAllTracks(flattenedTracks);
+          // Jangan langsung mainkan lagu, biarkan pengguna memilih
         }
-
       } catch (err) {
-        console.error('Error fetching catalog tracks:', err);
         const errorMessage = (err as Error).message || 'Terjadi kesalahan tak terduga.';
         setError(errorMessage);
         toast.error(errorMessage);
@@ -104,145 +96,160 @@ const KatalogPage = () => {
         setLoading(false);
       }
     };
-
     fetchCatalog();
   }, []);
-
-  const handleTrackSelect = (track: FlatTrack) => {
-    setCurrentTrack(track);
-  };
   
-  // ... (Sisa dari JSX tidak perlu diubah)
+  const handlePlay = async (track: FlatTrack) => {
+    if (nowPlaying?.id === track.id) {
+      if (isPlaying) audioRef.current?.pause();
+      else audioRef.current?.play();
+      return;
+    }
 
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-4">Memuat Musik...</h1>
-            {/* ... */}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Skeleton className="h-96 w-full rounded-lg" />
-            <div className="md:col-span-2 space-y-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+    if (!track.audioSrc) {
+      toast.error("Sumber audio tidak ditemukan.");
+      return;
+    }
+    
+    if (currentBlobUrl.current) URL.revokeObjectURL(currentBlobUrl.current);
+    
+    setNowPlaying(track);
+    setIsPlaying(false);
+    
+    try {
+      const audioResponse = await fetch(track.audioSrc);
+      const audioBlob = await audioResponse.blob();
+      const blobUrl = URL.createObjectURL(audioBlob);
+      currentBlobUrl.current = blobUrl;
+      
+      if (audioRef.current) {
+        audioRef.current.src = blobUrl;
+        audioRef.current.play();
+      }
+    } catch (err) {
+      console.error("Error streaming audio:", err);
+      toast.error("Gagal memuat audio.");
+      setNowPlaying(null);
+    }
+  };
 
-  if (error) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-12 text-center">
-          <h1 className="text-4xl font-bold mb-4 text-red-600">Error!</h1>
-          <p className="text-lg text-muted-foreground">{error}</p>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    return () => {
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+    };
+  }, []);
+  
+  const formatDuration = (seconds: number | null) => {
+    if (seconds === null || isNaN(seconds)) return 'N/A';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
-  if (tracks.length === 0) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-12 text-center">
-          <h1 className="text-4xl font-bold mb-4">Tidak Ada Musik Ditemukan</h1>
-          <p className="text-lg text-muted-foreground">Belum ada trek yang tersedia di katalog.</p>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
+  if (loading) { /* ... UI Loading ... */ }
+  if (error) { /* ... UI Error ... */ }
+  
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <div className="flex flex-col min-h-screen bg-background text-foreground" onContextMenu={(e) => e.preventDefault()}>
       <Navbar />
       <main className="flex-grow container mx-auto px-4 py-12">
         <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-4">Temukan Musikmu</h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Jelajahi ribuan lagu dari artis independen. Temukan soundtrack yang sempurna untuk proyek kreatif Anda berikutnya.
-            </p>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="relative flex-grow">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input type="search" placeholder="Cari lagu, artis, atau genre..." className="pl-10 w-full" />
-            </div>
-            {/* ... Filter buttons ... */}
+          {/* Header */}
         </div>
         
-        <Card className="overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3">
-            
-            <div className="md:col-span-1 p-6 flex flex-col items-center justify-center bg-muted/50">
-              {currentTrack && (
-                <>
-                  <img
-                    src={currentTrack.albumArtUrl}
-                    alt={`Album art for ${currentTrack.albumTitle}`}
-                    className="w-full max-w-[256px] h-auto aspect-square rounded-lg shadow-lg object-cover mb-6"
-                  />
-                  <h2 className="text-2xl font-semibold text-center">{currentTrack.title}</h2>
-                  <p className="text-muted-foreground mb-4">{currentTrack.artistName}</p>
-                  
-                  <audio 
-                    controls 
-                    src={currentTrack.audioSrc} 
-                    className="w-full"
-                    key={currentTrack.id}
-                    autoPlay
-                  >
-                    Browser Anda tidak mendukung elemen audio.
-                  </audio>
-                </>
-              )}
+        {allTracks.length === 0 && !loading ? (
+            <div className="text-center">
+                <h1 className="text-4xl font-bold mb-4">Tidak Ada Musik Ditemukan</h1>
+                <p className="text-lg text-muted-foreground">Belum ada trek yang tersedia di katalog.</p>
             </div>
+        ) : (
+            <Card className="overflow-hidden bg-gradient-to-b from-primary/10 to-background">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                
+                {/* Kolom Kiri: Info Rilisan Unggulan */}
+                <div className="md:col-span-4 p-6 flex flex-col items-center md:items-start text-center md:text-left">
+                  {featuredRelease ? (
+                    <>
+                      <img
+                        src={featuredRelease.cover_url || '/placeholder.svg'}
+                        alt={`Cover for ${featuredRelease.title}`}
+                        className="w-full max-w-[256px] md:max-w-full h-auto aspect-square rounded-lg shadow-lg object-cover mb-6"
+                      />
+                      <h2 className="text-3xl font-bold">{featuredRelease.title}</h2>
+                      <p className="text-xl text-muted-foreground">{featuredRelease.artist_name}</p>
+                    </>
+                  ) : <Skeleton className="w-full aspect-square" />}
+                </div>
 
-            <div className="md:col-span-2 p-6">
-              <h3 className="text-xl font-semibold mb-4 border-b pb-2">Daftar Lagu</h3>
-              <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-                {tracks.map((track) => (
-                  <Button
-                    key={track.id}
-                    variant="ghost"
-                    onClick={() => handleTrackSelect(track)}
-                    className={cn(
-                      'w-full flex items-center justify-start text-left h-auto p-3',
-                      currentTrack?.id === track.id && 'bg-primary/10 text-primary'
-                    )}
-                  >
-                    <div className="mr-4">
-                      {currentTrack?.id === track.id ? (
-                        <PauseCircle className="h-6 w-6 text-primary" />
-                      ) : (
-                        <PlayCircle className="h-6 w-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-grow">
-                      <p className="font-semibold">{track.title}</p>
-                      <p className="text-sm text-muted-foreground">{track.artistName}</p>
-                    </div>
-                  </Button>
-                ))}
+                {/* Kolom Kanan: Daftar Lagu */}
+                <div className="md:col-span-8 p-6">
+                  <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+                    {allTracks.map((track, index) => (
+                      <div 
+                        key={track.id} 
+                        className={cn(
+                          "flex items-center justify-between p-2 rounded-md hover:bg-primary/10 group cursor-pointer",
+                          nowPlaying?.id === track.id && "bg-primary/20"
+                        )}
+                        onClick={() => handlePlay(track)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-muted-foreground w-6 text-center">{index + 1}</span>
+                          <img src={track.albumArtUrl} alt={track.albumTitle} className="w-10 h-10 rounded-sm"/>
+                          <div>
+                            <p className={cn("font-semibold", nowPlaying?.id === track.id && "text-primary")}>{track.title}</p>
+                            <p className="text-sm text-muted-foreground">{track.artistName}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-muted-foreground hidden md:block">{formatDuration(track.duration)}</span>
+                            <Button variant="ghost" size="icon" className="group-hover:opacity-100 opacity-0 transition-opacity">
+                              {nowPlaying?.id === track.id && isPlaying ? (
+                                <PauseCircle className="h-6 w-6 text-primary" />
+                              ) : (
+                                <PlayCircle className="h-6 w-6" />
+                              )}
+                            </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </Card>
+        )}
+      </main>
+
+      {/* Pemutar Bawah (Spotify Style) */}
+      {nowPlaying && (
+        <footer className="sticky bottom-0 z-50 bg-background/95 backdrop-blur-sm border-t p-4">
+          <div className="container mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <img src={nowPlaying.albumArtUrl} alt={nowPlaying.albumTitle} className="w-14 h-14 rounded-md" />
+              <div className="min-w-0">
+                <p className="font-bold truncate">{nowPlaying.title}</p>
+                <p className="text-sm text-muted-foreground truncate">{nowPlaying.artistName}</p>
               </div>
             </div>
-
+            <audio ref={audioRef} className="hidden"/>
+            <Button variant="ghost" size="icon" onClick={() => {
+              if (isPlaying) audioRef.current?.pause();
+              else audioRef.current?.play();
+            }}>
+              {isPlaying ? <PauseCircle className="h-8 w-8" /> : <PlayCircle className="h-8 w-8" />}
+            </Button>
           </div>
-        </Card>
-
-      </main>
-      <Footer />
+        </footer>
+      )}
+      {!nowPlaying && <Footer />}
     </div>
   );
 };

@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, LayoutGrid, FileSignature, Blocks } from 'lucide-react'; // Updated imports
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';import { Menu, LayoutGrid, FileSignature, Blocks, Music } from 'lucide-react'; // Updated imports
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { toast, Toaster } from 'sonner';
+
 // Collapsible is no longer needed for this section
 
 // Reusable navigation content for both sidebar and mobile sheet
@@ -64,6 +63,21 @@ const DashboardNavContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
                 <span>Services</span>
             </NavLink>
         </li>
+        <li>
+            <NavLink
+                to="/dashboard/music"
+                onClick={onLinkClick}
+                className={({ isActive }) =>
+                    cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                        isActive && 'bg-primary/10 text-primary'
+                    )
+                }
+            >
+                <Music className="h-4 w-4" />
+                <span>Manajemen Musik</span>
+            </NavLink>
+        </li>
       </ul>
     </nav>
   );
@@ -87,7 +101,7 @@ const DashboardLayout = ({ children, user }: { children: React.ReactNode, user: 
 
   return (
     <div className="min-h-screen w-full">
-       <Toaster richColors />
+
       {/* --- Desktop Sidebar --- */}
       <aside className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-64 md:flex-col border-r bg-card">
         <div className="p-6">

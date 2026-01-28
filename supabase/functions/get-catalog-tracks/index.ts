@@ -1,5 +1,4 @@
 // supabase/functions/get-catalog-tracks/index.ts
-// !! KODE DIAGNOSTIK SEMENTARA !!
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -17,9 +16,7 @@ async function handleOptions(req: Request) {
 
 Deno.serve(async (req) => {
   const optionsResponse = await handleOptions(req);
-  if (optionsResponse) {
-    return optionsResponse;
-  }
+  if (optionsResponse) return optionsResponse;
 
   try {
     const supabaseUrl = Deno.env.get("PROJECT_B_URL");
@@ -34,30 +31,84 @@ Deno.serve(async (req) => {
       serviceRoleKey,
       { auth: { persistSession: false } }
     );
-    
-    // --- QUERY DIAGNOSTIK ---
-    // Kita hanya mengambil 10 rilisan aktif tanpa lagu untuk mengisolasi masalah.
-    const { data: diagnosticData, error: diagnosticError } = await supabaseAdmin
-      .from("releases")
-      .select(`
+
+    const body = await req.json().catch(() => ({}));
+    const { limit = 200, offset = 0, releaseId } = body;
+
+    let data;
+    let error;
+    let count = null;
+
+    const query = `
+      id,
+      title,
+      artist_name,
+      cover_url,
+      genre,
+      release_type,
+      release_date,
+      upc,
+      tracks (
         id,
         title,
-        status,
-        artist_name
-      `)
-      .eq("status", "active")
-      .limit(10);
+        artist_name,
+        isrc,
+        genre,
+        audio_url,
+        explicit_lyrics,
+        duration
+      )
+    `;
 
-    if (diagnosticError) {
-      throw diagnosticError;
+    if (releaseId) {
+      // --- Ambil SATU rilisan berdasarkan ID ---
+      const { data: singleData, error: singleError } = await supabaseAdmin
+        .from("releases")
+        .select(query)
+        .eq("id", releaseId)
+        .eq("status", "active")
+        .is("archived_at", null)
+        .single(); // .single() untuk mendapatkan satu objek, bukan array
+      
+      data = singleData;
+      error = singleError;
+
+    } else {
+      // --- Ambil DAFTAR rilisan untuk halaman grid ---
+      const { data: listData, error: listError } = await supabaseAdmin
+        .from("releases")
+        .select(query)
+        .eq("status", "active")
+        .is("archived_at", null)
+        .order("release_date", { ascending: false })
+        .range(offset, offset + limit - 1);
+      
+      data = listData;
+      error = listError;
+
+      // Hanya hitung total jika kita mengambil daftar
+      const { count: totalCount, error: countError } = await supabaseAdmin
+        .from("releases")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active")
+        .is("archived_at", null);
+      
+      if (countError) throw countError;
+      count = totalCount;
     }
 
-    // Kirim respons mentah dari query diagnostik
+    if (error) throw error;
+
     return new Response(
       JSON.stringify({
         success: true,
-        // Kita sengaja mengirim data mentah ini untuk diinspeksi di frontend
-        diagnosticData: diagnosticData, 
+        data: data,
+        pagination: releaseId ? null : { // Jangan sertakan paginasi jika mengambil satu
+          total: count,
+          limit,
+          offset,
+          hasMore: count ? offset + limit < count : false,
+        },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

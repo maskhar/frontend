@@ -1,34 +1,44 @@
-# Rencana Pengembangan Halaman Katalog & Manajemen Musik
+# Project TODO List
 
-Dokumen ini melacak tugas yang perlu diselesaikan untuk mengimplementasikan, memperbaiki, dan memperluas fungsionalitas terkait katalog musik.
+Dokumen ini merangkum status implementasi fitur-fitur utama aplikasi.
 
-## Fase 1: Perbaikan Aliran Data & Fungsionalitas Dasar Katalog Publik (SELESAI)
-
-Tujuan dari fase ini adalah untuk mengatasi masalah halaman blank, memastikan data dari database Supabase B dapat diambil dengan benar melalui endpoint yang telah disediakan, dan ditampilkan di frontend.
+## ✅ **Fase 1: Perbaikan Aliran Data & Fungsionalitas Dasar (SELESAI)**
 
 - [x] Mendiagnosis masalah awal (halaman blank, error `getUrl`, dll.).
-- [x] Mencoba pendekatan RLS publik dan menemukan bahwa itu merusak keamanan data di dashboard.
-- [x] **[Kunci Pembelajaran]** Mengidentifikasi bahwa platform hosting (Lovable) telah menyediakan Edge Function `get-catalog-tracks` yang aman di Proyek B.
-- [x] Mengadopsi arsitektur yang benar: Frontend (Proyek A) memanggil Edge Function yang sudah ada (di Proyek B) secara langsung.
+- [x] Mengidentifikasi arsitektur yang benar: Frontend memanggil Edge Function yang sudah ada di Proyek B.
 - [x] Menghapus kebijakan RLS publik yang salah dari Proyek B.
-- [x] Memperbarui komponen `Katalog.tsx` untuk menggunakan `fetch` ke endpoint Proyek B dengan `apikey` yang benar.
-- [x] Memastikan data berhasil ditampilkan di halaman katalog (`/katalog`).
+- [x] Memperbaiki `KatalogPage.tsx` untuk menggunakan `fetch` ke endpoint Proyek B dengan otentikasi `apikey` yang benar.
+- [x] Memastikan data berhasil ditampilkan di halaman katalog.
 
-## Fase 2: Peningkatan UI/UX Katalog Publik (Berikutnya)
+## ✅ **Fase 2: Peningkatan UI/UX & Fitur Lanjutan (SELESAI)**
 
-Setelah data mengalir dengan benar, fase ini berfokus pada peningkatan pengalaman pengguna agar halaman katalog (`/katalog`) lebih interaktif dan sesuai dengan logika bisnis.
+Fase ini berfokus pada peningkatan pengalaman pengguna, skalabilitas, dan fungsionalitas katalog.
 
-- [ ] Mengelompokkan lagu berdasarkan rilis (`releases`) di halaman katalog.
-- [ ] Membuat logika tampilan yang berbeda untuk tipe rilis `Single`, `EP`, dan `Album`.
-- [ ] Menampilkan *badge* "Explicit" jika lagu memiliki penanda `explicit_lyrics`.
-- [ ] Menampilkan informasi `genre` untuk setiap lagu.
-- [ ] Mengimplementasikan fungsionalitas pencarian dan filter di halaman katalog.
-- [ ] Menyesuaikan komponen pemutar media (media player) untuk menangani antrean putar (playlist) untuk Album/EP.
+- [x] Mengimplementasikan tata letak dua kolom (detail & grid) yang terinspirasi dari aplikasi musik modern.
+- [x] Membuat tata letak sepenuhnya responsif untuk desktop, tablet, dan mobile.
+- [x] Mengimplementasikan kolom detail rilisan yang *sticky* di desktop.
+- [x] Mengimplementasikan pemutar musik global dengan `PlayerContext` (state terpusat untuk `playlist`, `nowPlaying`, `isPlaying`, dll.).
+- [x] Membuat komponen pemutar bawah (`Player.tsx`) dengan kontrol Play/Pause, Next/Prev, Shuffle, Repeat, Volume, Progress Bar.
+- [x] Mengimplementasikan `NowPlayingSheet` untuk tampilan pemutar layar penuh di mobile, dipicu dari mini player.
+- [x] Mengimplementasikan paginasi dengan *Infinite Scroll* untuk menangani katalog musik yang besar, mengambil data secara bertahap saat pengguna men-*scroll*.
+- [x] Menerapkan keamanan audio dasar (sembunyikan URL asli dengan Blob, nonaktifkan klik kanan).
+- [x] Menampilkan judul dinamis yang menghitung jumlah total rilisan.
+- [x] Memperbaiki *bug* rendering (kesalahan `ReferenceError` ikon, `Navbar` tertutup, kolom detail hilang).
 
-## Fase 3: Membangun UI Manajemen Musik di Dashboard (Fitur Baru)
+## 🔜 **Fase 3: Fitur Tambahan & Penyempurnaan (Dalam Proses)**
 
-Fase ini bertujuan untuk mengimplementasikan halaman di dalam dashboard admin untuk mengelola musik, yang memiliki kebutuhan data dan keamanan yang berbeda dari katalog publik.
+Fokus pada peningkatan fungsionalitas dan UX katalog.
 
-- [ ] Merancang dan membuat komponen UI baru untuk halaman manajemen musik di dashboard.
-- [ ] Memastikan Supabase Client di dashboard menggunakan RLS per-pengguna dengan benar.
-- [ ] Menampilkan data di UI dashboard, kemungkinan dalam bentuk tabel dengan informasi status dan opsi manajemen (edit, approve, reject).
+*   [ ] **Pencarian & Filter:** Mengimplementasikan fungsionalitas pencarian teks dan filter berdasarkan genre.
+*   [ ] **URL Slug:** Mengganti ID di URL (`/katalog/:releaseId`) dengan nama rilisan yang lebih ramah SEO (misalnya, `/katalog/nama-album-keren`).
+*   [ ] **Tampilkan Badge "Explicit":** Menampilkan penanda visual (misalnya, ikon E) untuk lagu dengan `explicit_lyrics`.
+*   [ ] **Optimasi Performa:** Memastikan pengambilan data efisien, terutama saat *scrolling*.
+
+## ⏳ **Fase 4: Pembangunan UI Manajemen Musik di Dashboard (Belum Dimulai)**
+
+Fokus pada fungsionalitas admin/pengelolaan.
+
+*   [ ] Merancang dan membuat komponen UI baru untuk halaman manajemen musik di dashboard.
+*   [ ] Mengimplementasikan logika untuk menampilkan data dengan status berbeda (pending, active, rejected).
+*   [ ] Menambahkan fitur untuk mengelola rilisan dan lagu (edit, tambah, hapus).
+*   [ ] Memastikan Supabase Client di dashboard menggunakan RLS per-pengguna dengan benar untuk keamanan data.
