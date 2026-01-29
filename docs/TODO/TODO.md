@@ -57,3 +57,16 @@ Dokumen ini merangkum status implementasi fitur-fitur utama aplikasi.
 *   [ ] Merancang dan membuat komponen UI baru untuk halaman manajemen musik di dashboard.
 *   [ ] Memastikan Supabase Client di dashboard menggunakan RLS per-pengguna dengan benar.
 *   [ ] Menampilkan data di UI dashboard dengan opsi manajemen (edit, approve, reject).
+
+## 🚀 Fitur Baru: Alur Pendaftaran & Kontrak (/pricing)
+
+*   [x] **Perubahan Navigasi:** Ganti nama rute `/contract` menjadi `/pricing` dan perbarui menu di *header* menjadi dropdown "Harga".
+*   [x] **Halaman Pricelist:** Rancang dan buat halaman `/pricing` yang menampilkan daftar paket harga.
+*   [x] **Halaman Detail Paket:** Buat template halaman dinamis di `/pricing/:slug` untuk menampilkan detail per paket.
+*   [x] **Tombol Detail:** Tambahkan tombol/tautan "Lihat Detail" pada setiap kartu di halaman `/pricing`.
+*   [x] **Dasbor (CRUD Paket):** Buat halaman CRUD untuk mengelola detail konten dari setiap paket harga (termasuk deskripsi panjang).
+*   [ ] **Alur Pendaftaran:** Implementasikan UI dan logika untuk pendaftaran pengguna baru.
+*   [ ] **Dashboard Sementara:** Rancang tampilan dasbor terbatas untuk pengguna yang baru mendaftar.
+*   [ ] **Form Kontrak Digital:** Buat komponen form untuk pengisian dan persetujuan kontrak.
+*   [ ] **Integrasi Pembayaran:** Rencanakan dan implementasikan alur pengalihan ke gerbang pembayaran.
+*   [ ] **Desain API Gateway:** Definisikan *endpoints* yang dibutuhkan untuk komunikasi antara *frontend* dan *backend*.

@@ -1,19 +1,59 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Music2, Menu, X } from "lucide-react";
+import { Music2, Menu, X, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink } from "@/components/ui/navigation-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+
+interface MenuItem {
+  id: string;
+  name: string;
+  path: string | null;
+  parent_id: string | null;
+  display_order: number;
+  status: 'active' | 'inactive';
+  children?: MenuItem[]; // Untuk struktur hierarkis
+}
 
 const Navbar = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]); // Ganti any dengan tipe yang sesuai nanti
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      setLoadingCategories(true);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('name, slug') // Hanya ambil data yang diperlukan
+        .eq('status', 'active')
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error("Error fetching categories for navbar:", error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Katalog", path: "/katalog" },
     { name: "Store Partner", path: "/store-partner" },
     { name: "Services", path: "/services" },
-    { name: "Contract", path: "/contract" },
+    { name: "Harga", path: "/pricing" },
     { name: "Kolaborasi", path: "/kolaborasi" },
     { name: "Blog", path: "/blog" },
   ];
@@ -92,81 +132,309 @@ const Navbar = () => {
             </svg>
           </Link>
 
-          {/* Nav Links - Desktop */}
-          <div className="hidden lg:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`text-sm transition-colors ${
-                  isActive(link.path)
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
+                              {/* Nav Links - Desktop */}
 
-          {/* CTA */}
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => alert('Under Development!')}>
-              Masuk
-            </Button>
-            <Button variant="hero" size="default" className="hidden sm:inline-flex" onClick={() => alert('Under Development!')}>
-              Daftar
-            </Button>
-            
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-          </div>
-        </div>
+                              <div className="hidden lg:flex items-center gap-6">
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden py-4 border-t border-border/50"
-          >
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    isActive(link.path)
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              ))}
-              <div className="flex gap-2 mt-4 px-4">
-                <Button variant="outline" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  Masuk
-                </Button>
-                <Button variant="hero" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                  Daftar
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </div>
-    </motion.nav>
-  );
+                                {navLinks.filter(link => link.name !== "Harga").map((link) => (
+
+                                  <Link
+
+                                    key={link.path}
+
+                                    to={link.path}
+
+                                    className={`text-sm transition-colors ${
+
+                                      isActive(link.path)
+
+                                        ? "text-primary font-medium"
+
+                                        : "text-muted-foreground hover:text-foreground"
+
+                                    }`}
+
+                                  >
+
+                                    {link.name}
+
+                                  </Link>
+
+                                ))}
+
+                                <NavigationMenu>
+
+                                  <NavigationMenuList>
+
+                                    <NavigationMenuItem>
+
+                                      <NavigationMenuTrigger className="text-sm transition-colors text-muted-foreground hover:text-foreground">Harga</NavigationMenuTrigger>
+
+                                                                          <NavigationMenuContent>
+
+                                                                            <div className="flex gap-4 p-4 md:w-[400px] lg:w-[500px]">
+
+                                                                              <div className="w-[150px]">
+
+                                                                                <NavigationMenuLink asChild>
+
+                                                                                  <Link
+
+                                                                                    className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-4 no-underline outline-none focus:shadow-md"
+
+                                                                                    to="/pricing"
+
+                                                                                  >
+
+                                                                                    <Music2 className="h-6 w-6" />
+
+                                                                                    <div className="mb-2 mt-4 text-lg font-medium">Pricing</div>
+
+                                                                                    <p className="text-sm leading-tight text-muted-foreground">
+
+                                                                                      Pilih paket yang paling sesuai.
+
+                                                                                    </p>
+
+                                                                                  </Link>
+
+                                                                                </NavigationMenuLink>
+
+                                                                              </div>
+
+                                                                              <div className="flex-1 max-h-[250px] overflow-y-auto pr-2">
+
+                                                                                <ul className="grid grid-cols-1 gap-3">
+
+                                                                                                                              {loadingCategories ? (
+
+                                                                                                                                Array.from({ length: 3 }).map((_, i) => (
+
+                                                                                                                                  <li key={`cat-loader-${i}`}><Skeleton className="h-12 w-full rounded-md" /></li>
+
+                                                                                                                                ))
+
+                                                                                                                              ) : (
+
+                                                                                                          categories.map((category) => (
+
+                                                                                                             <li key={category.id}>
+
+                                                                                                              <NavigationMenuLink asChild>
+
+                                                                                                                  <Link
+
+                                                                                                                      to={`/pricing/${category.slug}`}
+
+                                                                                                                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+
+                                                                                                                  >
+
+                                                                                                                      <div className="text-sm font-medium leading-none">{category.name}</div>
+
+                                                                                                                      {/* <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+
+                                                                                                                          Deskripsi singkat kategori di sini jika ada.
+
+                                                                                                                      </p> */}
+
+                                                                                                                  </Link>
+
+                                                                                                              </NavigationMenuLink>
+
+                                                                                                            </li>
+
+                                                                                                          ))
+
+                                                                                                        )}
+
+                                                                                </ul>
+
+                                                                              </div>
+
+                                                                            </div>
+
+                                                                          </NavigationMenuContent>
+
+                                    </NavigationMenuItem>
+
+                                  </NavigationMenuList>
+
+                                </NavigationMenu>
+
+                              </div>
+
+                    
+
+                              {/* CTA */}
+
+                              <div className="flex items-center gap-3">
+
+                                <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => alert('Under Development!')}>
+
+                                  Masuk
+
+                                </Button>
+
+                                <Button variant="hero" size="default" className="hidden sm:inline-flex" onClick={() => alert('Under Development!')}>
+
+                                  Daftar
+
+                                </Button>
+
+                                
+
+                                {/* Mobile Menu Button */}
+
+                                <Button
+
+                                  variant="ghost"
+
+                                  size="icon"
+
+                                  className="lg:hidden"
+
+                                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+
+                                >
+
+                                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+
+                                </Button>
+
+                              </div>
+
+                            </div>
+
+                    
+
+                            {/* Mobile Menu */}
+
+                            {mobileMenuOpen && (
+
+                              <motion.div
+
+                                initial={{ opacity: 0, height: 0 }}
+
+                                animate={{ opacity: 1, height: "auto" }}
+
+                                exit={{ opacity: 0, height: 0 }}
+
+                                className="lg:hidden py-4 border-t border-border/50"
+
+                              >
+
+                                            <div className="flex flex-col gap-2">
+
+                                              {navLinks.map((link) => {
+
+                                                if (link.name === "Harga") {
+
+                                                  return (
+
+                                                    <Collapsible key={link.path}>
+
+                                                      <CollapsibleTrigger className="flex justify-between items-center w-full px-4 py-2 rounded-lg text-muted-foreground hover:bg-muted">
+
+                                                        {link.name}
+
+                                                        <ChevronDown className="h-4 w-4" />
+
+                                                      </CollapsibleTrigger>
+
+                                                      <CollapsibleContent className="pl-8 py-2 flex flex-col gap-2">
+
+                                                        {categories.map((category) => (
+
+                                                          <Link
+
+                                                            key={category.id}
+
+                                                            to={`/pricing/${category.slug}`}
+
+                                                            onClick={() => setMobileMenuOpen(false)}
+
+                                                            className={`px-4 py-2 rounded-lg transition-colors ${
+
+                                                              location.pathname.includes(category.slug)
+
+                                                                ? "bg-primary/10 text-primary font-medium"
+
+                                                                : "text-muted-foreground hover:bg-muted"
+
+                                                            }`}
+
+                                                          >
+
+                                                            {category.name}
+
+                                                          </Link>
+
+                                                        ))}
+
+                                                      </CollapsibleContent>
+
+                                                    </Collapsible>
+
+                                                  );
+
+                                                }
+
+                                                return (
+
+                                                  <Link
+
+                                                    key={link.path}
+
+                                                    to={link.path}
+
+                                                    onClick={() => setMobileMenuOpen(false)}
+
+                                                    className={`px-4 py-2 rounded-lg transition-colors ${
+
+                                                      isActive(link.path)
+
+                                                        ? "bg-primary/10 text-primary font-medium"
+
+                                                        : "text-muted-foreground hover:bg-muted"
+
+                                                    }`}
+
+                                                  >
+
+                                                    {link.name}
+
+                                                  </Link>
+
+                                                );
+
+                                              })}
+
+                                              <div className="flex gap-2 mt-4 px-4">
+
+                                                <Button variant="outline" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+
+                                                  Masuk
+
+                                                </Button>
+
+                                                <Button variant="hero" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+
+                                                  Daftar
+
+                                                </Button>
+
+                                              </div>
+
+                                            </div>
+
+                              </motion.div>
+
+                            )}
+
+                          </div>
+
+              </motion.nav>  );
 };
 
 export default Navbar;

@@ -1,0 +1,13 @@
+[
+  {
+    "origin": [
+      "http://localhost:8082",
+      "http://localhost:5173",
+      "https://dev.soundpub.xyz",
+      "https://soundpub.xyz"
+    ],
+    "method": ["GET"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]

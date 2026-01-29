@@ -67,20 +67,10 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
         setNowPlaying(track);
         
         const loadAndPlayAudio = async () => {
-            if (currentBlobUrl.current) URL.revokeObjectURL(currentBlobUrl.current);
-            setIsPlaying(false);
-            
-            try {
-                const response = await fetch(track.audio_url);
-                const blob = await response.blob();
-                const blobUrl = URL.createObjectURL(blob);
-                currentBlobUrl.current = blobUrl;
-                audioRef.current.src = blobUrl;
-                audioRef.current.play();
-            } catch (err) {
-                toast.error(`Gagal memuat: ${track.title}`);
-                console.error(err);
-            }
+            // Tidak lagi menggunakan blob URL untuk menghindari masalah CORS dan penyederhanaan
+            // Keamanan (menyembunyikan URL asli) akan dikesampingkan untuk fungsionalitas.
+            audioRef.current.src = track.audio_url;
+            audioRef.current.play();
         };
 
         loadAndPlayAudio();

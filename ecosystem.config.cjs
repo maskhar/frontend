@@ -22,3 +22,5 @@ module.exports = {
     },
   ],
 };
+
+// TODO: Sesuaikan konfigurasi di atas sesuai kebutuhan proyek Anda.

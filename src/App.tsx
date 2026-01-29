@@ -7,7 +7,8 @@ import Index from "./pages/Index";
 import KatalogPage from "./pages/KatalogPage";
 import StorePartner from "./pages/StorePartner";
 import Services from "./pages/Services";
-import Contract from "./pages/Contract";
+import PricingPage from "./pages/Pricing";
+import CategoryDetailPage from "./pages/CategoryDetailPage";
 import Kolaborasi from "./pages/Kolaborasi";
 import Blog from "./pages/Blog";
 import NotFound from "./pages/NotFound";
@@ -16,6 +17,9 @@ import DashboardPage from "./pages/Dashboard";
 import DashboardContractPage from "./pages/DashboardContractPage";
 import DashboardServicesPage from "./pages/DashboardServicesPage";
 import DashboardMusicPage from './pages/DashboardMusicPage';
+import DashboardPricingManagementPage from './pages/DashboardPricingManagementPage';
+// import DashboardPricingManagementPage from './pages/DashboardPricingManagementPage';
+
 import "./index.css";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { PlayerProvider } from "./contexts/PlayerContext";
@@ -69,7 +73,8 @@ const App = () => {
                 <Route path="/katalog" element={<KatalogPage />} />
                 <Route path="/store-partner" element={<StorePartner />} />
                 <Route path="/services" element={<Services />} />
-                <Route path="/contract" element={<Contract />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/pricing/:slug" element={<CategoryDetailPage />} />
                 <Route path="/kolaborasi" element={<Kolaborasi />} />
                 <Route path="/blog" element={<Blog />} />
                 
@@ -85,6 +90,9 @@ const App = () => {
                   <Route path="/dashboard/contract" element={<DashboardContractPage />} />
                   <Route path="/dashboard/services" element={<DashboardServicesPage />} />
                   <Route path="/dashboard/music" element={<DashboardMusicPage />} />
+                  <Route path="/dashboard/pricing-management" element={<DashboardPricingManagementPage />} />
+                  <Route path="/dashboard/pricing-management" element={<DashboardPricingManagementPage />} />
+
                 </Route>
 
                 {/* --- Catch-all Route --- */}

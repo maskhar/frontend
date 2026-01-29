@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';import { Menu, LayoutGrid, FileSignature, Blocks, Music } from 'lucide-react'; // Updated imports
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';import { Menu, LayoutGrid, FileSignature, Blocks, Music, ShoppingCart } from 'lucide-react'; // Updated imports
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -76,6 +76,21 @@ const DashboardNavContent = ({ onLinkClick }: { onLinkClick?: () => void }) => {
             >
                 <Music className="h-4 w-4" />
                 <span>Manajemen Musik</span>
+            </NavLink>
+        </li>
+        <li>
+            <NavLink
+                to="/dashboard/pricing-management"
+                onClick={onLinkClick}
+                className={({ isActive }) =>
+                    cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                        isActive && 'bg-primary/10 text-primary'
+                    )
+                }
+            >
+                <ShoppingCart className="h-4 w-4" />
+                <span>Manajemen Harga & Paket</span>
             </NavLink>
         </li>
       </ul>
