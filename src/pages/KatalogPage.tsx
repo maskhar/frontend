@@ -50,12 +50,12 @@ const KatalogPage = () => {
     else setLoadingMore(true);
     
     setError(null);
-    let edgeFunctionUrl = `https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=${PAGE_LIMIT}&offset=${currentOffset}`;
+    let edgeFunctionUrl = `${import.meta.env.VITE_CATALOG_SUPABASE_URL}/functions/v1/get-catalog-tracks?limit=${PAGE_LIMIT}&offset=${currentOffset}`;
     if (search) {
       edgeFunctionUrl += `&search=${encodeURIComponent(search)}`;
     }
 
-    const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wa3Z2ZGduaGhvcGtrZWFva3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMjM5NDUsImV4cCI6MjA4MzU5OTk0NX0.UqDBz-xZYR5GluL7t3gItuJuWZipI9xlwt32KEIZrsc';
+    const anonKey = import.meta.env.VITE_CATALOG_SUPABASE_ANON_KEY;
 
     try {
       const response = await fetch(edgeFunctionUrl, {

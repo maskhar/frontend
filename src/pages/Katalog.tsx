@@ -54,8 +54,8 @@ const KatalogPage = () => {
     const fetchCatalog = async () => {
       setLoading(true);
       setError(null);
-      const edgeFunctionUrl = 'https://opkvvdgnhhopkkeaokzo.supabase.co/functions/v1/get-catalog-tracks?limit=200&offset=0';
-      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wa3Z2ZGduaGhvcGtrZWFva3pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMjM5NDUsImV4cCI6MjA4MzU5OTk0NX0.UqDBz-xZYR5GluL7t3gItuJuWZipI9xlwt32KEIZrsc';
+      const edgeFunctionUrl = `${import.meta.env.VITE_CATALOG_SUPABASE_URL}/functions/v1/get-catalog-tracks?limit=200&offset=0`;
+      const anonKey = import.meta.env.VITE_CATALOG_SUPABASE_ANON_KEY;
 
       try {
         const response = await fetch(edgeFunctionUrl, {
